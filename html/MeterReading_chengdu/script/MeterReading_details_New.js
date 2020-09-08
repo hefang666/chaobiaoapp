@@ -1,4 +1,5 @@
 function fnIntVue() {
+    console.log(111)
     window.MeterReadVue = new Vue({
         el: '#MeterRead',
         data: {
