@@ -37,6 +37,61 @@ function pGetNameFromCoords(callback, options) {
     }
 }
 
+// 压缩图片
+// function pictureCompress(oldPath){
+//     var imageFilter = api.require('imageFilter');
+//     var pathArr=oldPath.split("/");
+//     var newPath=pathArr[pathArr.length-1];
+//     // alert(newPath);
+//     pathArr.pop();
+//     var newOld=pathArr.join("/");
+//     // alert(newOld);
+//
+//     imageFilter.compress({
+//         img: oldPath,
+//         quality: 0.1,
+//         save:{
+//           album:false,
+//           imgPath:newOld,
+//           imgName:newPath,
+//         }
+//     },function( ret, err ){
+//         if(err){
+//           // $api.toast('压缩不成功');
+//           alert("压缩不成功");
+//         }
+//         if( ret.status ){
+//           // $api.toast('压缩成功');
+//           alert("压缩成功");
+//
+//         }else{
+//           // $api.toast('压缩不成功');
+//           alert("压缩不成功");
+//
+//         }
+//         alert(newOld+"/"+newPath);
+//         // getPicInfo(newOld+"/"+newPath);
+//         return true;
+//         // return JSON.stringify( ret )
+//
+//     });
+// }
+
+// 获取图片信息
+function getPicInfo(pic) {
+    var imageFilter = api.require('imageFilter');
+    imageFilter.getAttr({
+        path: pic
+    }, function(ret, err) {
+        if (ret.status) {
+            // alert(ret.size/1024);
+            // return ret.size/1024;
+            // alert( JSON.stringify( ret ) );
+        } else {
+            // alert( JSON.stringify( err ) );
+        }
+    });
+}
 // 拍照与获取图片
 // function pGetPicture(options = undefined, callback) {
 function pGetPicture(options, callback) {
@@ -61,41 +116,199 @@ function pGetPicture(options, callback) {
             saveToPhotoAlbum: false,
             // groupName: options.from =='cb'?'综合水务平台抄表原图':'综合水务平台原图'
         }, function(ret, err) {
-            if(err){
-              alert("拍照失败！请重试");
-              return false;
+            if (err) {
+                alert("拍照失败！请重试");
+                return false;
             }
             if (ret.data) {
                 var lists = [];
-                // 测试直接把图片保存到fs文件中，这边便于代码操作  zxf 20200824
-                fs.moveTo({
-                    oldPath: ret.data,
-                    newPath: options.from == 'cb' ? (api.fsDir + '/meterReadingPicture'):(api.fsDir + '/Pictures')
-                }, function(ret1, err1) {
-                    if (ret1.status) {
-                        var fileName = options.from == 'cb' ? 'meterReadingPicture' : 'Pictures';
-                        var picUrl = api.fsDir+'/'+fileName+'/'+ ret.data.substring(ret.data.lastIndexOf('/') + 1, ret.data.length);
-                        var lists = [];
-                        lists.push({
-                            path: picUrl
-                        });
-                        if (waterMark) {
-                            var markOptions = options;
-                            markOptions.data = lists;
-                            pAddwaterMark(markOptions, function(ret2) {
-                                callback(ret2, err);
-                            });
+                // alert(JSON.stringify(ret.data));
+                // 压缩图片后 再添加
+                var oldPath = ret.data;
+                // var newPath=options.from == 'cb' ? (api.fsDir + '/meterReadingPicture'):(api.fsDir + '/Pictures');
+                // pictureCompress(oldPath,newDir,newName);
+                // getPicInfo(oldPath);
+                // var ysPic = pictureCompress(oldPath);
+                // alert(ysPic);
+
+                // 开始压缩
+
+                // 获取要压缩的尺寸
+                var picSize = 2000;
+
+                var imageFilter = api.require('imageFilter');
+                var pathArr = oldPath.split("/");
+                var newPath = pathArr[pathArr.length - 1];
+                // alert(newPath);
+                pathArr.pop();
+                var newOld = pathArr.join("/");
+                // alert(newOld);
+                // alert(oldSize);
+                // var quality = Math.round(oldSize/500)*0.1;alert(quality);
+
+                // 判断压缩尺寸大小 小了就不压缩
+                imageFilter.getAttr({
+                    path: oldPath
+                }, function(ret, err) {
+                    if (ret.status) {
+                        // alert(ret.size/1024);
+                        var oldSize = ret.size / 1024;
+                        if (oldSize > picSize) {
+                            $api.toast('开始压缩图片');
+                            // var quality = Math.round(oldSize/500)*0.1;alert(quality);
+                            if (oldSize < 1500) {
+                                quality = 0.9
+                            } else if (oldSize < 2000) {
+                                quality = 0.8
+                            } else if (oldSize < 2500) {
+                                quality = 0.7
+                            } else if (oldSize < 3000) {
+                                quality = 0.6
+                            } else if (oldSize < 4000) {
+                                quality = 0.5
+                            } else {
+                                quality = 0.4
+                            }
+
+                            quality=(picSize/500)*quality;
+                            quality=quality>1?0.95:quality;
+                            // var size = 200
+                            // 200/500 = 0.4
+                            nextCompress(true, quality);
                         } else {
-                            ret.imgList = [];
-                            ret.imgList.push(ret.data);
-                            ret.status = true;
-                            callback(ret, err);
+                            // $api.toast('不压缩图片');
+                            nextCompress(false, "");
                         }
-                    } else {
-                        alert("拍照失败！请重试");
-                        return false;
+
                     }
                 });
+
+                function nextCompress(isCompress, quality) {
+                    if (isCompress) {
+                        imageFilter.compress({
+                            img: oldPath,
+                            quality: quality,
+                            save: {
+                                album: false,
+                                imgPath: newOld,
+                                imgName: newPath,
+                            }
+                        }, function(ret3, err) {
+                            if (err) {
+                                $api.toast('压缩不成功');
+                                // alert("压缩不成功");
+                            }
+                            if (ret3.status) {
+                                $api.toast('压缩成功');
+                                // alert("压缩成功");
+
+                            } else {
+                                $api.toast('压缩不成功');
+                                // alert("压缩不成功");
+
+                            }
+                            // alert(newOld+"/"+newPath);
+                            getPicInfo(oldPath);
+
+                            // 测试直接把图片保存到fs文件中，这边便于代码操作  zxf 20200824
+                            fs.moveTo({
+                                oldPath: oldPath,
+                                newPath: options.from == 'cb' ? (api.fsDir + '/meterReadingPicture') : (api.fsDir + '/Pictures')
+                            }, function(ret1, err1) {
+                                if (ret1.status) {
+                                    var fileName = options.from == 'cb' ? 'meterReadingPicture' : 'Pictures';
+                                    var picUrl = api.fsDir + '/' + fileName + '/' + ret.data.substring(ret.data.lastIndexOf('/') + 1, ret.data.length);
+
+                                    var lists = [];
+                                    lists.push({
+                                        path: picUrl
+                                    });
+                                    if (waterMark) {
+                                        var markOptions = options;
+                                        markOptions.data = lists;
+                                        pAddwaterMark(markOptions, function(ret2) {
+                                            callback(ret2, err);
+                                        });
+                                    } else {
+                                        ret.imgList = [];
+                                        ret.imgList.push(ret.data);
+                                        ret.status = true;
+                                        callback(ret, err);
+                                    }
+                                } else {
+                                    alert("拍照失败！请重试");
+                                    return false;
+                                }
+                            });
+                        });
+                    } else {
+                        // 测试直接把图片保存到fs文件中，这边便于代码操作  zxf 20200824
+                        fs.moveTo({
+                            oldPath: oldPath,
+                            newPath: options.from == 'cb' ? (api.fsDir + '/meterReadingPicture') : (api.fsDir + '/Pictures')
+                        }, function(ret1, err1) {
+                            if (ret1.status) {
+                                var fileName = options.from == 'cb' ? 'meterReadingPicture' : 'Pictures';
+                                var picUrl = api.fsDir + '/' + fileName + '/' + ret.data.substring(ret.data.lastIndexOf('/') + 1, ret.data.length);
+
+                                var lists = [];
+                                lists.push({
+                                    path: picUrl
+                                });
+                                if (waterMark) {
+                                    var markOptions = options;
+                                    markOptions.data = lists;
+                                    pAddwaterMark(markOptions, function(ret2) {
+                                        callback(ret2, err);
+                                    });
+                                } else {
+                                    ret.imgList = [];
+                                    ret.imgList.push(ret.data);
+                                    ret.status = true;
+                                    callback(ret, err);
+                                }
+                            } else {
+                                alert("拍照失败！请重试");
+                                return false;
+                            }
+                        });
+                    }
+
+                }
+
+                // getPicInfo(oldPath);
+                // 测试直接把图片保存到fs文件中，这边便于代码操作  zxf 20200824
+                // fs.moveTo({
+                //     oldPath: oldPath,
+                //     newPath: options.from == 'cb' ? (api.fsDir + '/meterReadingPicture'):(api.fsDir + '/Pictures')
+                // }, function(ret1, err1) {
+                //     if (ret1.status) {
+                //         var fileName = options.from == 'cb' ? 'meterReadingPicture' : 'Pictures';
+                //         var picUrl = api.fsDir+'/'+fileName+'/'+ ret.data.substring(ret.data.lastIndexOf('/') + 1, ret.data.length);
+                //
+                //         var lists = [];
+                //         lists.push({
+                //             path: picUrl
+                //         });
+                //         if (waterMark) {
+                //             var markOptions = options;
+                //             markOptions.data = lists;
+                //             pAddwaterMark(markOptions, function(ret2) {
+                //                 callback(ret2, err);
+                //             });
+                //         } else {
+                //             ret.imgList = [];
+                //             ret.imgList.push(ret.data);
+                //             ret.status = true;
+                //             callback(ret, err);
+                //         }
+                //     } else {
+                //         alert("拍照失败！请重试");
+                //         return false;
+                //     }
+                // });
+
+
             } else {
                 ret.status = false;
                 callback(ret, err);
@@ -125,9 +338,9 @@ function pGetPicture(options, callback) {
             },
             rotation: true
         }, function(ret, err) {
-            if(err){
-              alert("拍照失败！请重试");
-              return false;
+            if (err) {
+                alert("拍照失败！请重试");
+                return false;
             }
 
             if (ret.eventType == "confirm") {
@@ -182,9 +395,9 @@ function pGetPicture(options, callback) {
             mediaValue: 'video',
             saveToPhotoAlbum: true
         }, function(ret, err) {
-            if(err){
-              alert("失败！请重试");
-              return false;
+            if (err) {
+                alert("失败！请重试");
+                return false;
             }
             if (ret.data != "") {
                 ret.status = true;
@@ -211,13 +424,13 @@ function pAddwaterMark(options, callback) {
         "fontnum": 0,
     };
     for (var n = 0; n < waterMarkNumber.length; n++) {
-        var number = 100 + n*50
-        // var number = n;
-        // if (number == 0) {
-        //     number = 100;
-        // } else {
-        //     number = 100 + (n * 50);
-        // }
+        var number = 100 + n * 50
+            // var number = n;
+            // if (number == 0) {
+            //     number = 100;
+            // } else {
+            //     number = 100 + (n * 50);
+            // }
         waterMarkJson["font" + n + "x"] = "50";
         waterMarkJson["font" + n + "y"] = number;
         if (options.waterMarkData[waterMarkNumber[n]].length !== 0) {
@@ -237,14 +450,14 @@ function pAddwaterMark(options, callback) {
         for (var i = 0; i < data.length; i++) {
             var path = data[i].path;
             mobilePrintInply(waterMarkJson, path, function(currentPath) {
-              imgList.push(currentPath);
-              if(imgList.length == data.length) {
-                callback({
-                  msg: '成功',
-                  status: true,
-                  imgList: imgList
-                })
-              }
+                imgList.push(currentPath);
+                if (imgList.length == data.length) {
+                    callback({
+                        msg: '成功',
+                        status: true,
+                        imgList: imgList
+                    })
+                }
             })
         }
     }
@@ -252,17 +465,17 @@ function pAddwaterMark(options, callback) {
 }
 
 // 添加水印  如果添加水印成功则
-function mobilePrintInply (waterMarkJson, path, callback) {
-  var mobilePrint = api.require('mobilePrint');
-  waterMarkJson.oldimgurl = path;
-  waterMarkJson.newimgurl = path;
-  mobilePrint.imgPrint(waterMarkJson, function(ret) {
-    if (ret.status) {
-      callback(ret.imgurl)
-    } else {
-      callback(path)
-    }
-  });
+function mobilePrintInply(waterMarkJson, path, callback) {
+    var mobilePrint = api.require('mobilePrint');
+    waterMarkJson.oldimgurl = path;
+    waterMarkJson.newimgurl = path;
+    mobilePrint.imgPrint(waterMarkJson, function(ret) {
+        if (ret.status) {
+            callback(ret.imgurl)
+        } else {
+            callback(path)
+        }
+    });
 }
 
 // 图片预览
