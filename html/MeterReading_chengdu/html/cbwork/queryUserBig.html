@@ -505,6 +505,9 @@
                     <div class="aui-searchbar-clear-btn">
                         <i class="aui-iconfont aui-icon-close"></i>
                     </div>
+                    <div class="aui-pull-right aui-btn" tapmode data-action="CodeScanning">
+                        <img src="../../image/MeteReading/cbdatiles/saoma.png" alt="">
+                    </div>
                 </div>
                 <div class="aui-searchbar-btn cancel">取消</div>
             </div>
@@ -776,6 +779,58 @@
                         location: 'top'
                     });
 
+                }
+            });
+        },
+        'CodeScanning': function() {
+            var FNScanner = api.require('FNScanner');
+            FNScanner.open({
+                autorotation: true
+            }, function(ret, err) {
+                if (ret) {
+                    if (ret.eventType == 'success') {
+                        var yhbh = ret.content;
+                        $("#search-input").val(yhbh);
+                        searchBarClearBtn.style.display = 'block';
+                        searchBarBtn.classList.add("aui-text-info");
+                        searchBarBtn.textContent = "搜索";
+                        api.showProgress({
+                            style: 'default',
+                            animationType: 'fade',
+                            title: '努力加载中...',
+                            modal: false
+                        });
+                        var numer = yhbh;
+                        db.selectSql({
+                            name: 'CBtest',
+                            sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH LIKE "%' + numer + '%" or YHMC LIKE "%' + numer + '%"'
+                        }, function(ret, err) {
+                            api.hideProgress();
+                            if (ret.status) {
+                                if (ret.data != "") {
+                                    $("#serchList").empty();
+                                    $("#storingList").empty()
+                                    var dataList = ret.data
+                                    handleAnnotData(dataList)
+                                } else {
+                                    api.toast({
+                                        msg: '此条信息不存在',
+                                        duration: 2000,
+                                        location: 'bottom'
+                                    });
+                                }
+                            } else {
+                                api.toast({
+                                    msg: '输入错误,请重新输入',
+                                    duration: 2000,
+                                    location: 'top'
+                                });
+
+                            }
+                        });
+                    }
+                } else {
+                    //console.log(JSON.stringify(err));
                 }
             });
         }

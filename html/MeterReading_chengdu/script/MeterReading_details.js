@@ -728,19 +728,14 @@ function fnIntVue() {
                         var lon = ""; //经度
                         var lat = ""; //维度
                         pGetLocation(function(ret, err) {
-                            if (err) {
-                                alert("拍照失败！请重试");
-                                return false;
-                            }
                             if (ret.status) {
                                 lon = ret.lon;
                                 lat = ret.lat;
                                 saveImgDetail(lon, lat)
-
                             } else {
                                 var jwd = _this.UserDetails.JWD;
                                 if (jwd != null && jwd != "null" && jwd != "" && jwd != " ") {
-                                    var strs = userbean.JWD.split(",");
+                                    var strs = jwd.split(",");
                                     lon = strs[0];
                                     lat = strs[1];
                                 } else {

@@ -726,6 +726,7 @@ function fnIntVue() {
                     }
                     if (ret.status) {
                         // var currentImg = ret.imgList[0];
+                        //alert("拍照成功，图片数：" + ret.imgList.length);
                         var item = ret.imgList[0];
                         var cbch = _this.UserDetails.CBCH;
                         var yhbh = _this.UserDetails.YHBH;
@@ -734,20 +735,18 @@ function fnIntVue() {
 
                         var lon = ""; //经度
                         var lat = ""; //维度
+                        //alert("获取经纬度");
                         pGetLocation(function(ret, err) {
-                            if (err) {
-                                alert("拍照失败！请重试");
-                                return false;
-                            }
                             if (ret.status) {
+                                //alert("获取成功：" + ret.lon + "," + ret.lat);
                                 lon = ret.lon;
                                 lat = ret.lat;
                                 saveImgDetail(lon, lat)
-
                             } else {
+                                //alert("获取失败");
                                 var jwd = _this.UserDetails.JWD;
                                 if (jwd != null && jwd != "null" && jwd != "" && jwd != " ") {
-                                    var strs = userbean.JWD.split(",");
+                                    var strs = jwd.split(",");
                                     lon = strs[0];
                                     lat = strs[1];
                                 } else {
@@ -779,6 +778,7 @@ function fnIntVue() {
                                         img.isAppend = true;
                                     }
                                     _this.ImgData.push(img);
+                                    //alert("存入图片数组");
                                     setTimeout(function() {
                                         var ele = document.getElementById('flex-vertical');
                                         ele.scrollTop = ele.clientHeight;
@@ -1276,14 +1276,6 @@ function fnIntVue() {
                             });
                         }
                         if (index == 4) {
-                            //打开备忘录
-                            api.openWin({
-                                name: 'MeterReading_Note',
-                                url: './MeterReading_Note.html',
-                                pageParam: _this.UserDetails
-                            });
-                        }
-                        if (index == 5) {
                             gpsmodel.gpsstate(function(ret) {
                                 if (ret.gps == true) {
                                     api.openWin({
@@ -1303,7 +1295,7 @@ function fnIntVue() {
                                 }
                             });
                         }
-                        if (index == 6) {
+                        if (index == 5) {
                             _this.viewLastMonthPhoto();
                         }
                     }

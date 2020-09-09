@@ -70,6 +70,17 @@
             text-align: center;
         }
 
+        #gengxin {
+            width: 100px;
+            height: 40px;
+            margin-top: 10px;
+            background-color: #2F80F6;
+            color: #ffffff;
+            border-radius: 20px;
+            font-size: 18px;
+            line-height: 40px;
+        }
+
         #xuchao {
             width: 100px;
             height: 40px;
@@ -80,21 +91,21 @@
             line-height: 40px;
         }
 
-        #gengxin {
+        #chongchao {
             width: 100px;
             height: 40px;
-            background-color: #2F80F6;
-            color: #ffffff;
+            background-color: #FF5063;
+            color: #fff;
             border-radius: 20px;
             font-size: 18px;
             line-height: 40px;
         }
 
-        #chongchao {
+        #louchao {
             width: 100px;
             height: 40px;
             background-color: #FC5959;
-            color: #fff;
+            color: #ffffff;
             border-radius: 20px;
             font-size: 18px;
             line-height: 40px;
@@ -209,7 +220,7 @@
             margin-bottom: 10px;
         }
 
-        #book_dv1 {
+        .book_dv1 {
             margin-top: 10px;
             margin-bottom: 10px;
             display: flex;
@@ -383,7 +394,7 @@
         </div>
     </header>
     <div id="book">
-        <div id="book_dv1">
+        <div class="book_dv1">
             <div class="dv1_one">
                 <div id="ZBS" class="shuzi">0</div>
                 <div class="wenzi">应抄表数</div>
@@ -400,6 +411,20 @@
             </div>
         </div>
 
+        <div class="book_dv1">
+            <div class="dv1_one">
+                <div id="YSC" class="shuzi">0</div>
+                <div class="wenzi">上传数</div>
+            </div>
+            <div class="dv1_two"></div>
+            <div class="dv1_one">
+
+            </div>
+            <div class="dv1_one">
+                <button id="gengxin" onclick="gengxin()">下载</button>
+            </div>
+        </div>
+
         <!-- <div id="book_dv2">
             <div id="YSC">上传数&nbsp;0</div>
             <div id="GDS">异常记录数&nbsp;0</div>
@@ -409,8 +434,8 @@
 
         <div id="book_bottom">
             <div><button id="xuchao" onclick="xuchao()">续抄</button></div>
-            <div><button id="gengxin" onclick="gengxin()">更新数据</button></div>
             <div><button id="chongchao" onclick="chongchao()">重抄</button></div>
+            <div><button id="louchao" onclick="louchao()">漏抄</button></div>
         </div>
     </div>
 
@@ -502,6 +527,7 @@
     var param, db, LoginName;
     var type = 0;
     var Book;
+    var downloadType = 0;
     apiready = function() {
         LoginName = $api.getStorage('loginData').userName;
         db = api.require('db');
@@ -580,6 +606,17 @@
     // 头部数量统计刷新
     function queryBook() {
         var db = api.require('db');
+        var usersdata = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select * from MRM_USERBIG_BEAN where userName = "' + LoginName + '"'
+        });
+        if (usersdata.status && usersdata.data.length > 0) {
+            $('#gengxin').html("更新数据");
+            downloadType = 1;
+        } else {
+            $('#gengxin').html("下载");
+            downloadType = 0;
+        }
         var yscusersdata = db.selectSqlSync({
             name: 'CBtest',
             sql: 'select count(*) as YSC from MRM_USERBIG_BEAN where CBBZ=1 and ZTSCCG=1 AND userName = "' + LoginName + '"'
@@ -606,8 +643,8 @@
             $('#ZBS').html(param.BBCYHZS);
             $('#WC').html(param.WC);
             $('#YC').html(param.YC);
-            $('#YSC').html("上传数&nbsp;" + param.YSC);
-            $('#GDS').html("异常记录数&nbsp;" + param.GDSBS);
+            $('#YSC').html(param.YSC);
+            //$('#GDS').html("异常记录数&nbsp;" + param.GDSBS);
             setTimeout(() => {
                 api.showProgress({
                     title: '加载中',
@@ -646,8 +683,8 @@
             $('#ZBS').html(param.BBCYHZS);
             $('#WC').html(param.WC);
             $('#YC').html(param.YC);
-            $('#YSC').html("上传数&nbsp;" + param.YSC);
-            $('#GDS').html("异常记录数&nbsp;" + param.GDSBS);
+            $('#YSC').html(param.YSC);
+            //$('#GDS').html("异常记录数&nbsp;" + param.GDSBS);
         }
     }
     // 抄表列表刷新
@@ -731,13 +768,78 @@
         // api.hideProgress();
     }
 
+    function gengxin() {
+        if (downloadType == 1) {
+            //获取未上传的用户
+            var bool = false;
+            var userdata = db.selectSqlSync({
+                name: 'CBtest',
+                sql: 'select * from MRM_USERBIG_BEAN where CBBZ=1 and ZTSCCG=0 and userName="' + LoginName + '"'
+            });
+            if (userdata.status && userdata.data.length > 0) {
+                bool = true;
+            }
+            //获取未上传的图片
+            var photodata = db.selectSqlSync({
+                name: 'CBtest',
+                sql: 'select * from MRM_PHOTOS_BEAN where SFSC=0 and YHBH in (select YHBH from MRM_USERBIG_BEAN where CBBZ=1 and ZTSCCG=1 and userName="' + LoginName + '")'
+            });
+            if (photodata.status && photodata.data.length > 0) {
+                bool = true;
+            }
+
+            //更新数据，需要判断是否存在未上传的数据，如果有则提示，没有则直接删除
+            if (bool) {
+                api.confirm({
+                    title: '提示',
+                    msg: '存在未上传的数据或图片，当前操作会清除该数据，是否确定！',
+                    buttons: ['确定', '取消']
+                }, function(ret, err) {
+                    var index = ret.buttonIndex;
+                    if (index == 1) {
+                        //删除所有的水表接收数据，重新下载
+                        var ret = db.executeSqlSync({
+                            name: 'CBtest',
+                            sql: 'delete from MRM_PHOTOS_BEAN where YHBH in (select YHBH from MRM_USERBIG_BEAN where userName="' + LoginName + '") and userName="' + LoginName + '"'
+                        });
+                        var ret = db.executeSqlSync({
+                            name: 'CBtest',
+                            sql: 'delete from MRM_USERBIG_BEAN where userName="' + LoginName + '"'
+                        });
+                        var ret = db.executeSqlSync({
+                            name: 'CBtest',
+                            sql: 'UPDATE MRM_BOOKSBIG_BEAN SET BBCYHZS="0" WHERE userName="' + LoginName + '"'
+                        });
+                        download();
+                    }
+                });
+            } else {
+                var ret = db.executeSqlSync({
+                    name: 'CBtest',
+                    sql: 'delete from MRM_PHOTOS_BEAN where YHBH in (select YHBH from MRM_USERBIG_BEAN where userName="' + LoginName + '") and userName="' + LoginName + '"'
+                });
+                var ret = db.executeSqlSync({
+                    name: 'CBtest',
+                    sql: 'delete from MRM_USERBIG_BEAN where userName="' + LoginName + '"'
+                });
+                var ret = db.executeSqlSync({
+                    name: 'CBtest',
+                    sql: 'UPDATE MRM_BOOKSBIG_BEAN SET BBCYHZS="0" WHERE userName="' + LoginName + '"'
+                });
+                download();
+            }
+        } else {
+            download();
+        }
+    }
+
     var PageIndexSingle = 1; //页码
     var RecordCountSingle; //下标
     var PageIndexSingleNumer = 100 //一页100条
     var UsersDataSingle;
     var book;
     //下载单个抄表册数据
-    function gengxin() {
+    function download() {
         adilog("正在下载用户数据", "正在下载用户数据,请稍后...");
         db.selectSql({
             name: 'CBtest',
@@ -1015,7 +1117,7 @@
                                 // 判断页数加加
                                 if ((PageIndexSingle - 1) * PageIndexSingleNumer + UsersDataSingle.length < RecordCountSingle) {
                                     PageIndexSingle++;
-                                    gengxin();
+                                    download();
                                 } else {
                                     var userdata = db.selectSqlSync({
                                         name: 'CBtest',
@@ -1044,21 +1146,25 @@
                                     duration: 2000,
                                     location: 'middle'
                                 });
+                                queryBook();
                             }
                         } else {
                             var UIActionProgress = api.require('UIActionProgress');
                             UIActionProgress.close();
                             alert(JSON.stringify(ret.Message));
+                            queryBook();
                         }
                     } else {
                         var UIActionProgress = api.require('UIActionProgress');
                         UIActionProgress.close();
                         alert(JSON.stringify(err.msg));
+                        queryBook();
                     }
                 });
             } else {
                 var UIActionProgress = api.require('UIActionProgress');
                 UIActionProgress.close();
+                queryBook();
             }
         });
     }
@@ -1321,6 +1427,17 @@
                 location: 'bottom'
             });
         }
+    }
+
+    function louchao() {
+        api.openWin({
+            name: 'MeterReading_details',
+            url: './MeterReading_details.html',
+            pageParam: {
+                name: 1,
+                chCode: ''
+            }
+        });
     }
 
     function judge() {
