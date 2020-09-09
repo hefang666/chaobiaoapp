@@ -9,9 +9,17 @@
     <link rel="stylesheet" type="text/css" href="../../../public/css/style.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/aui1.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/dialog.css" />
-    <link rel="stylesheet" type="text/css" href="../../css/public.css" />
     <style>
+        body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-flow: column;
+        }
+
         #header {
+            position: fixed;
+            top: 0;
             background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
         }
 
@@ -49,14 +57,12 @@
 </head>
 
 <body>
-    <div class="header-box">
-        <header class="aui-bar aui-bar-nav" id="header">
-            <div class="aui-pull-left aui-btn" data-action='back'>
-                <span class="aui-iconfont aui-icon-left"></span>
-            </div>
-            <div class="aui-title">操作日志</div>
-        </header>
-    </div>
+    <header class="aui-bar aui-bar-nav" id="header">
+        <div class="aui-pull-left aui-btn" data-action='back'>
+            <span class="aui-iconfont aui-icon-left"></span>
+        </div>
+        <div class="aui-title">操作日志</div>
+    </header>
 
     <div id="center">
 
@@ -96,7 +102,7 @@
         $api.fixStatusBar(header);
         var headerH = $api.offset(header).h;
         LoginName = $api.getStorage('loginData').userName;
-        $('#center').css('padding-top', '' + headerH + 'px');
+        $('#center').css('margin-top', '' + headerH + 'px');
 
         queryLogs();
     };
@@ -114,6 +120,7 @@
                 }
 
                 var str = template('logList', datas);
+                //console.log(JSON.stringify(str));
                 $('#center div').remove();
                 $('#center').append(str);
                 fnReadyOpenWin();

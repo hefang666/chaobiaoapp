@@ -40,7 +40,7 @@
             float: left;
             width: 10px;
             height: 10px;
-            margin-top: 28px;
+            margin-top: 20px;
         }
 
         .sp {
@@ -61,7 +61,6 @@
             padding-top: 15px;
             padding-bottom: 15px;
             margin-bottom: 15px;
-            font-size: 0.8rem;
         }
 
         .dv_top {
@@ -290,6 +289,7 @@
                 }
 
                 var str = template('bookList', datas);
+                //console.log(JSON.stringify(str));
                 $('#books div').remove();
                 $('#books').append(str);
                 fnReadyOpenWin();
@@ -337,6 +337,7 @@
                 }
 
                 var str = template('bookListonlie', datas);
+                //console.log(JSON.stringify(str));
                 $('#books div').remove();
                 $('#books').append(str);
                 fnReadyOpenWin();
@@ -433,6 +434,7 @@
                 }
 
                 var str = template('bookList', datas);
+                //console.log(JSON.stringify(str));
                 $('#books div').remove();
                 $('#books').append(str);
                 fnReadyOpenWin();

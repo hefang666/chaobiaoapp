@@ -358,6 +358,7 @@
                 }
 
                 var str = template('photoList', datas);
+                //console.log(JSON.stringify(str));
                 $('#GDZP .img-item').remove();
                 $('#GDZP').append(str);
                 // $('#GDZP').append('<img src="../../image/MeteReading/tupian/zhaopian_daohang.png" onclick="openphoto(this)" data-id=0 class="photo"></img>');
@@ -653,7 +654,9 @@
         //     }),
         //     files: files
         // };
+        // console.log(JSON.stringify(body));
         // fnPost('', body, 'application/json', false, function(ret, err) {
+        //     console.log(JSON.stringify(ret));
         //     if (ret) {
         //         if (ret.Status == 0) {
         //             var db = api.require('db');
@@ -698,7 +701,9 @@
                 "Parameter": "1"
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     var Data = [];
@@ -746,7 +751,9 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     var Data = [];
@@ -802,7 +809,9 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     var Data = [];
@@ -845,7 +854,9 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     var Data = [];
@@ -1181,6 +1192,7 @@
                     "', '" + lon +
                     "', '" + lat +
                     "', '" + address + "')"
+                console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql

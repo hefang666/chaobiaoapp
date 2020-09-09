@@ -55,7 +55,7 @@
                 startPosition: api.pageParam.startPosition,
             },
             methods: {
-                openPreView: function() {
+                openPreView() {
                     _this = this;
                     vant.ImagePreview({
                         images: this.images,
@@ -65,7 +65,7 @@
                         }
                     });
                 },
-                back: function() {
+                back() {
                     api.closeWin({
                         animation: {
                             type: "fade",

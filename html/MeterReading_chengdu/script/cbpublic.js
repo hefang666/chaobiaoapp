@@ -168,6 +168,7 @@ function testNetIpRe(netIp) {
     var allNet = /^((2[0-4]\d|25[0-5]|[1-9]?\d|1\d{2})\.){3}(2[0-4]\d|25[0-5]|[1-9]?\d|1\d{2})\:([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$$/;
     var AllNets = new RegExp(allNet)
     if (AllNets.test(netIp)) {
+        console.log(true)
         return true;
     } else {
         api.toast({
@@ -183,6 +184,7 @@ function testAreaNetIpRe(netIp) {
     var testAreaNetRe = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\:([0-9]|[1-9]\d{1,3}|[1-5]\d{4}|6[0-5]{2}[0-3][0-5])$/;
     var AreaNetre = new RegExp(testAreaNetRe);
     if (AreaNetre.test(netIp)) {
+        console.log(true)
         return true;
     } else {
         // api.toast({
@@ -435,16 +437,20 @@ function locationCur(el) {
         if (ret.status) {
             lat = ret.lat;
             lon = ret.lon;
+
+            console.log(JSON.stringify(ret));
             $api.attr(el, 'data-Locations', ret.lat + ',' + ret.lon);
             bMap.getNameFromCoords({
                 lon: lon,
                 lat: lat
             }, function(ret, err) {
                 if (ret.status) {
+                    console.log(JSON.stringify(ret));
                     $api.html(el, ret.address);
                 }
             });
         } else {
+            console.log(JSON.stringify(err));
         }
         api.hideProgress();
     });
@@ -637,6 +643,7 @@ var params = {
     }
     // // 请求方式
     // JudgeWaterAbnormal(params, function(text) {
+    // 	console.log(text)
     // });
 
 function JudgeWaterAbnormal(params, callback) { //判断水量是否异常
@@ -730,7 +737,7 @@ function dataQuery() {
     //用户数据是否有未上传的数据
     var ret = db.selectSqlSync({
         name: 'CBtest',
-        sql: 'SELECT * FROM MRM_USER_BEAN where CBBZ=1 and ZTSCCG=0 and CWXX=" " and userName="' + LoginName + '"'
+        sql: 'SELECT * FROM MRM_USER_BEAN where CBBZ=1 and ZTSCCG=0 and ZXBLX!="2" and CWXX=" " and userName="' + LoginName + '"'
     });
     if (ret.status) {
         if (ret.data.length > 0) {
@@ -857,7 +864,7 @@ function estimateCopyCounts(cycleOptions) { //返回用水量
     switch (true) {
         case cycleOptions.estimateCopyType == 0: //估抄
             var dangqianriqi = new Date();
-            if (cycleOptions.dangqianriqi != null&&cycleOptions.dangqianriqi != "") {
+            if (cycleOptions.dangqianriqi != null && cycleOptions.dangqianriqi != "") {
                 dangqianriqi = cycleOptions.dangqianriqi;
             }
 
@@ -956,7 +963,7 @@ function normalVolumeFun(normalOptions) {
 
 // 翻表算法
 function turnOverTheTable(normalOptions) {
-    var weekWaterMeterMaxN = normalOptions.waterQD;
+    var weekWaterMeterMaxN = normalOptions.waterSBLC;
     var maxNumber = 0;
     var length = weekWaterMeterMaxN.toString().length;
     var number = 10;
@@ -967,4 +974,71 @@ function turnOverTheTable(normalOptions) {
     }
     maxNumber = number - 1;
     return maxNumber;
+}
+
+//正常与翻表水量计算
+function normalAlgorithm(normalOptions) {
+    //起度waterQD
+    //止度waterZD
+    //是否翻表waterSFFB
+    //水表量程waterSBLC
+    var waterVolume = 0;
+    if (normalOptions.waterSFFB) {
+        var maxNumber = turnOverTheTable(normalOptions);
+        waterVolume = Math.round(parseInt(normalOptions.waterZD) - parseInt(normalOptions.waterQD) + maxNumber + 1);
+    } else {
+        waterVolume = Math.round(parseInt(normalOptions.waterZD) - parseInt(normalOptions.waterQD));
+    }
+    return waterVolume;
+}
+
+//估抄水量计算
+function estimatedAlgorithm(estimatedOptions) {
+    //起度waterQD
+    //止度waterZD
+    //周期总水量waterZSL
+    //周期总天数waterZTS
+    //上次抄表日期waterSCCBRQ
+    //本次抄表日期waterBCCBRQ
+    var avgWaterVolume = 0;
+
+    var waterSYTS = estimatedOptions.waterSCCBRQ != "" ? getCurrentMeterReadingCycle(estimatedOptions.waterBCCBRQ, estimatedOptions
+        .waterSCCBRQ) : 0; //上次抄表到本次抄表的天数
+
+    var day = 0; //日平均用量
+    if (parseInt(estimatedOptions.waterZTS) != 0) {
+        day = parseInt(estimatedOptions.waterZSL) / parseInt(estimatedOptions.waterZTS);
+    }
+
+    avgWaterVolume = parseInt(estimatedOptions.waterZSL) == 0 ? 0 : (day *
+        waterSYTS); //本月的用水量
+    //alert("上次抄表日期：" + estimatedOptions.waterSCCBRQ + "本次抄表日期：" + estimatedOptions.waterBCCBRQ + "周期总水量：" + estimatedOptions.waterZSL + "周期总天数：" + estimatedOptions.waterZTS + "日平均用量：" + day + "上次抄表到本次抄表的天数：" + waterSYTS + "本次水量：" + avgWaterVolume);
+    return Math.round(avgWaterVolume);
+}
+
+//换表水量计算，（故障换表只算新表水量，旧表水量用上面的estimatedAlgorithm计算）
+function inTheTableAlgorithm(options) {
+    //是否是周检换表waterSFSZJHB
+    //是否是翻表waterSFSFB
+    //上次抄表日期waterSCCBRQ
+    //本次抄表日期waterBCCBRQ
+    //换表日期waterHBRQ
+    //旧表起度waterQD
+    //旧表止度waterZD
+    //新表起度waterXBQD
+    //新表止度waterXBZD
+    var waterVolume = 0;
+    //alert(JSON.stringify(options));
+    if (options.waterSFSZJHB) { //周检换表
+        if (options.waterSFSFB) { //周检换表-翻表
+            var maxNumber = turnOverTheTable(options);
+            waterVolume = Math.round(parseInt(options.waterZD) - parseInt(options.waterQD) + maxNumber + 1) + Math.round(parseInt(options.waterXBZD) - parseInt(options.waterXBQD));
+        } else { //周检换表-正常
+            waterVolume = Math.round(parseInt(options.waterZD) - parseInt(options.waterQD)) + Math.round(parseInt(options.waterXBZD) - parseInt(options.waterXBQD));
+        }
+    } else { //故障换表
+        waterVolume = Math.round(parseInt(options.waterZD) - parseInt(options.waterQD)) + Math.round(parseInt(options.waterXBZD) - parseInt(options.waterXBQD));
+    }
+
+    return Math.round(waterVolume);
 }

@@ -10,10 +10,16 @@
     <link rel="stylesheet" type="text/css" href="../../../public/css/style.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/aui1.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/dialog.css" />
-    <link rel="stylesheet" type="text/css" href="../../css/public.css" />
     <style>
+        body {
+            height: 100%;
+            width: 100%;
+            flex-flow: column;
+            display: flex;
+        }
 
         #header {
+            top: 0;
             background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
         }
 
@@ -25,7 +31,6 @@
         #dv {
             width: 100%;
             flex: 1;
-            margin-top: 80px;
             overflow: scroll;
             -webkit-overflow-scrolling: touch; //移动端滑动流畅设置
         }
@@ -65,15 +70,12 @@
 </head>
 
 <body id="bd">
-  <div class="header-box">
     <header class="aui-bar aui-bar-nav" id="header">
         <div class="aui-pull-left aui-btn" data-action='back'>
             <span class="aui-iconfont aui-icon-left"></span>
         </div>
         <div class="aui-title">失败原因</div>
     </header>
-  </div>
-
     <div id="dv">
 
     </div>
@@ -116,15 +118,15 @@
         bodyH = $api.offset(body).h;
         bodyW = $api.offset(body).w;
         var pageParam = api.pageParam;
-        queryUser(pageParam.CBCH);
+        queryUser(pageParam.Code);
     };
 
-    function queryUser(CBCH) {
+    function queryUser(Code) {
         var sql = "";
         if (api.pageParam.TYPE == 1) {
-            sql = 'select * from MRM_USER_BEAN where CBCH="' + CBCH + '" and CWXX!=" " and userName="' + LoginName + '"'
+            sql = 'select * from MRM_USER_BEAN where CBCH="' + Code + '" and CWXX!=" " and userName="' + LoginName + '"'
         } else {
-            sql = 'select * from MRM_WATER_METER_USER where CBCH="' + CBCH + '" and CWXX!=" " and userName="' + LoginName + '"'
+            sql = 'select * from MRM_WATER_METER_USER where BZBH="' + Code + '" and CWXX!=" " and userName="' + LoginName + '"'
         }
         var db = api.require('db');
         db.selectSql({
@@ -144,6 +146,7 @@
                         datas: userlist
                     }
                     var str = template('userList', datas);
+                    //console.log(JSON.stringify(str));
                     $('#dv ul').remove();
                     $('#dv').append(str);
                     fnReadyOpenWin();

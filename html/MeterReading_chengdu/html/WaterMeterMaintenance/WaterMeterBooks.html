@@ -10,7 +10,6 @@
     <link rel="stylesheet" type="text/css" href="../../../public/css/api.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/aui1.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/dialog.css" />
-    <link rel="stylesheet" type="text/css" href="../../css/public.css" />
     <style>
         html,
         body {
@@ -20,11 +19,12 @@
             flex-flow: column;
             background-color: rgba(243, 243, 243.1);
         }
-        /*#header {
+
+        #header {
             position: fixed;
             top: 0;
             background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
-        }*/
+        }
 
         .flex-wrap2 {
             display: flex;
@@ -75,6 +75,14 @@
             border-bottom: 0.6px solid #dddddd;
         }
 
+        #Num2 {
+            width: 100%;
+            height: 2rem;
+            background: #fff;
+            margin-top: 0.25rem;
+            border-bottom: 0.6px solid #dddddd;
+        }
+
         .NumShow {
             height: 2.5rem;
             display: flex;
@@ -108,6 +116,17 @@
             font-size: 1rem;
             margin-top: 0.25rem;
             background-color: red;
+            color: #ffffff;
+        }
+
+        .gxbzbh {
+            border-radius: 20px;
+            width: 80%;
+            margin-left: 10%;
+            text-align: center;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+            background-color: rgb(36, 208, 137);
             color: #ffffff;
         }
 
@@ -156,7 +175,7 @@
         .redio_download_btn {
             background: rgb(36, 208, 137);
             border-radius: 15px;
-            padding: 0.25rem 0.5rem;
+            padding: 0.5rem 0.75rem;
             text-align: center;
             font-family: Source Han Sans SC;
             font-weight: 400;
@@ -187,18 +206,15 @@
 </head>
 
 <body>
-    <div class="header-box">
-        <header class="aui-bar aui-bar-nav header" id="header">
-            <div class="aui-pull-left aui-btn" tapmode data-action='back'>
-                <span class="aui-iconfont aui-icon-left"></span>
-            </div>
-            <div class="aui-title">水表下载</div>
-            <div class="aui-pull-right aui-btn" tapmode data-action="CodeScanning">
-                <img src="../../image/MeteReading/cbdatiles/saoma.png" alt="">
-            </div>
-        </header>
-    </div>
-
+    <header class="aui-bar aui-bar-nav header" id="header">
+        <div class="aui-pull-left aui-btn" tapmode data-action='back'>
+            <span class="aui-iconfont aui-icon-left"></span>
+        </div>
+        <div class="aui-title">水表下载</div>
+        <div class="aui-pull-right aui-btn" tapmode data-action="CodeScanning">
+            <img src="../../image/MeteReading/cbdatiles/saoma.png" alt="">
+        </div>
+    </header>
     <div id="title">
         <div class="flex-wrap2">
             <div class="flex-con2">
@@ -222,6 +238,15 @@
         </div>
     </div>
     <div id="Num">
+        <div class="flex-wrap2">
+            <div class="flex-con2">
+                <div class="gxbzbh" tapmode data-action='bzbhDownload'>
+                    更新报装编号
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="Num2">
         <div class="flex-wrap2">
             <div class="flex-con2">
                 <label class="label1"><input class="aui-checkbox" type="checkbox" name="demo1" id="parantChexbox" onclick="allCheck(this)">全部</label>
@@ -255,12 +280,12 @@
     <div class="dv">
         <div class="title-li-one">
             <div>
-                <input class="aui-checkbox" type="checkbox" name="demo1" onchange="dianji(this)" value="{{value.BZBH}}"></input>
+                <input class="aui-checkbox" type="checkbox" name="demo1" onchange="dianji(this)" value="{{value}}"></input>
             </div>
             <div class="title-li-dv1" onclick="openMeterReading(this)" param="{{value}}">
-                <div class="CBCMC">{{value.BZBH}}</div>
+                <div class="CBCMC">{{value.BZBH}}{{value.SBYT}}</div>
             </div>
-            <div class="SFXZ_{{value.BZBH}}" onclick="openMeterReading(this)" param="{{value}}">
+            <div class="SFXZ_{{value.BZBH}}{{value.SBYTID}}" onclick="openMeterReading(this)" param="{{value}}">
                 {{if value.NOTDOWNLOAD!=1}}
                 <div class="notdownload">未下载</div>
                 {{else}}
@@ -270,15 +295,15 @@
         </div>
         <div class="title-li-two title-left" onclick="openMeterReading(this)" param="{{value}}">
             <div>
-                <div>总数<span class="sp ZS_{{value.BZBH}}">{{value.BBCYHZS}}</span></div>
+                <div>总数<span class="sp ZS_{{value.BZBH}}{{value.SBYTID}}">{{value.BBCYHZS}}</span></div>
             </div>
             <div>
-                <div>下载<span class="sp XZ_{{value.BZBH}}">{{value.CBNUMER}}</span></div>
+                <div>下载<span class="sp XZ_{{value.BZBH}}{{value.SBYTID}}">{{value.CBNUMER}}</span></div>
             </div>
         </div>
         <div class="title-li-one title-left">
-            <div>
-                <span class="redio_download_btn" tapmode data-action='appendDownload' param="{{value.BZBH}}">下载</span>
+            <div tapmode data-action='appendDownload' param="{{value}}">
+                <span class="redio_download_btn">下载</span>
             </div>
             <div onclick="openMeterReading(this)" param="{{value}}" style="height:44px;flex:1;"></div>
         </div>
@@ -328,101 +353,49 @@
 
     //模拟数据
     // function show() {
-    //     var ret = db.selectSqlSync({
-    //         name: 'CBtest',
-    //         sql: 'select * from MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
-    //     });
-    //     if (ret.data.length > 0) {
-    //
-    //     } else {
-    //         var sql = 'INSERT INTO MRM_WATER_METER_BOOK(userName, BZBH, BBCYHZS, CBNUMER, NOTDOWNLOAD) VALUES ("' + LoginName + '","' + 1066 + '","0","0","0")';
-    //         var ret = db.executeSqlSync({
-    //             name: 'CBtest',
-    //             sql: sql
-    //         });
-    //     }
-    //
-    //     var ret = db.selectSqlSync({
-    //         name: 'CBtest',
-    //         sql: 'select * from MRM_WATER_METER_USER where userName="' + LoginName + '"'
-    //     });
-    //     if (ret.data.length > 0) {
-    //
-    //     } else {
-    //         var sqlvalue = "";
-    //         for (var i = 0; i < 20; i++) {
-    //             if (i == 0 || sqlvalue == '') {
-    //
-    //             } else {
-    //                 sqlvalue += 'UNION ';
+    //     var ret = {
+    //         "Status": 0,
+    //         "Message": "成功",
+    //         "SerialNo": "2020-08-20 19:19:48",
+    //         "Summary": "",
+    //         "Totals": 0,
+    //         "Method": "R999",
+    //         "Data": "[{\"APPLICATIONNO\":\"CX2020071700025\",\"DJSHS\":2,\"SBYTID\":\"1\",\"SBYT\":\"户表\"},{\"APPLICATIONNO\":\"CX2020071700025\",\"DJSHS\":5,\"SBYTID\":\"0\",\"SBYT\":\"非户表\"}]"
+    //     };
+    //     if (ret.Status == 0) {
+    //         if (ret.Data != '') {
+    //             Booksdata = [];
+    //             if (ret.Data != "" && ret.Data != " ") {
+    //                 Booksdata = JSON.parse(ret.Data);
     //             }
-    //             sqlvalue += 'SELECT "' + LoginName + '",' +
-    //                 '"' + (0101000100 + i) + '",' +
-    //                 '"' + (0101000100 + i) + '",' +
-    //                 '"张' + (i + 1) + '",' +
-    //                 '"测试地址",' +
-    //                 '"测试地址",' +
-    //                 '"' + (0101000100 + i) + '",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"1066",' +
-    //                 '"' + (i + 1) + '",' +
-    //                 '"居民用水",' +
-    //                 '"居民用水",' +
-    //                 '"15",' +
-    //                 '"",' +
-    //                 '"不知道",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"",' +
-    //                 '"10",' +
-    //                 '"正常",' +
-    //                 '"",' +
-    //                 '"0",' +
-    //                 '"0",' +
-    //                 '" " ';
+    //
+    //             for (var i = 0; i < Booksdata.length; i++) {
+    //                 var sql = 'INSERT INTO MRM_WATER_METER_BOOK(userName, BZBH, BBCYHZS, CBNUMER, NOTDOWNLOAD, SBYTID, SBYT) VALUES ("' + LoginName +
+    //                     '","' + Booksdata[i].APPLICATIONNO +
+    //                     '","' + Booksdata[i].DJSHS +
+    //                     '","0","0","' + Booksdata[i].SBYTID +
+    //                     '","' + Booksdata[i].SBYT + '")';
+    //                 var ret = db.executeSqlSync({
+    //                     name: 'CBtest',
+    //                     sql: sql
+    //                 });
+    //
+    //                 var bookdata = db.selectSqlSync({
+    //                     name: 'CBtest',
+    //                     sql: 'select * from MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+    //                 });
+    //                 var value = GetPercent(bookdata.data.length, Booksdata.length);
+    //                 updateAdilogData("正在下载数据 " + bookdata.data.length + "/" + Booksdata.length,
+    //                     "正在下载数据,请稍后...", value);
+    //             }
+    //             queryBook();
     //         }
-    //         var insertRet = db.executeSqlSync({
-    //             name: 'CBtest',
-    //             sql: 'INSERT INTO MRM_WATER_METER_USER (' +
-    //                 'userName,' +
-    //                 'ZHBH,' +
-    //                 'YHBH,' +
-    //                 'YHMC,' +
-    //                 'YHDZ,' +
-    //                 'SBWZ,' +
-    //                 'SBBH,' +
-    //                 'GDDH,' +
-    //                 'YDDH,' +
-    //                 'CBCH,' +
-    //                 'CBXH,' +
-    //                 'YSXZ,' +
-    //                 'XZXF,' +
-    //                 'KJ,' +
-    //                 'CBYBH,' +
-    //                 'YYQY,' +
-    //                 'GSPQ,' +
-    //                 'CBZQ,' +
-    //                 'SBYT,' +
-    //                 'JWD,' +
-    //                 'RFID,' +
-    //                 'PATH,' +
-    //                 'SBQD,' +
-    //                 'SBZT,' +
-    //                 'BLSJ,' +
-    //                 'SFSC,' +
-    //                 'SFXG,' +
-    //                 'CWXX) ' + sqlvalue
+    //     } else {
+    //         api.toast({
+    //             msg: ret.Message,
+    //             duration: 2000,
+    //             location: 'bottom'
     //         });
-    //         if (insertRet.status) {
-    //             var retbook2 = db.executeSqlSync({
-    //                 name: 'CBtest',
-    //                 sql: 'UPDATE MRM_WATER_METER_BOOK SET BBCYHZS="20", CBNUMER="20", NOTDOWNLOAD=1 WHERE CBCH="1066" and userName="' + LoginName + '"'
-    //             });
-    //         }
     //     }
     //     queryBook();
     // }
@@ -442,7 +415,7 @@
                     "ClientName": api.deviceModel,
                     "OperatorId": $api.getStorage("cbOperatorId"),
                     "OperatorName": $api.getStorage("cbOperatorName"),
-                    "Required": '',
+                    "Required": 'BZBH=&SBYTID=',
                     "Type": '157'
                 }
                 var body = {
@@ -463,8 +436,12 @@
                                     Booksdata = JSON.parse(ret.Data);
                                 }
 
-                                for (var i in Booksdata) {
-                                    var sql = 'INSERT INTO MRM_WATER_METER_BOOK(userName, BZBH, BBCYHZS, CBNUMER, NOTDOWNLOAD) VALUES ("' + LoginName + '","' + Booksdata[i].APPLICATIONNO + '","' + Booksdata[i].DJSHS + '","0","0")';
+                                for (var i = 0; i < Booksdata.length; i++) {
+                                    var sql = 'INSERT INTO MRM_WATER_METER_BOOK(userName, BZBH, BBCYHZS, CBNUMER, NOTDOWNLOAD, SBYTID, SBYT) VALUES ("' + LoginName +
+                                        '","' + Booksdata[i].APPLICATIONNO +
+                                        '","' + Booksdata[i].DJSHS +
+                                        '","0","0","' + Booksdata[i].SBYTID +
+                                        '","' + Booksdata[i].SBYT + '")';
                                     var ret = db.executeSqlSync({
                                         name: 'CBtest',
                                         sql: sql
@@ -604,7 +581,6 @@
             api.closeWin();
         },
         'CodeScanning': function() {
-            var userCode
             var FNScanner = api.require('FNScanner');
             FNScanner.open({
                 autorotation: true
@@ -612,16 +588,36 @@
                 if (ret) {
                     if (ret.eventType == 'success') {
                         SBBH = ret.content;
-
-                        api.openWin({
-                            name: 'WaterMeterUser',
-                            url: './WaterMeterUser.html',
-                            pageParam: {
-                                SBBH: SBBH
-                            }
+                        var userdata = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select * from MRM_WATER_METER_USER where SBBH="' + SBBH + '" AND userName = "' + LoginName + '"'
                         });
+                        if (userdata.status) {
+                            if (userdata.data.length > 1) {
+                                api.toast({
+                                    msg: '数据异常，存在表号重复的数据',
+                                    duration: 2000,
+                                    location: 'bottom'
+                                });
+                            } else if (userdata.data.length == 1) {
+                                api.openWin({
+                                    name: 'WaterMeterUser',
+                                    url: './WaterMeterUser.html',
+                                    pageParam: {
+                                        YHBH: userdata.data[0].YHBH
+                                    }
+                                });
+                            } else {
+                                api.toast({
+                                    msg: '未找到对应表号的用户数据。',
+                                    duration: 2000,
+                                    location: 'bottom'
+                                });
+                            }
+                        }
                     }
                 } else {
+                    console.log(JSON.stringify(err));
                 }
             });
         },
@@ -636,17 +632,76 @@
                 return;
             }
 
-            var bzbh = $(this).attr('param')
+            var param = JSON.parse($(this).attr('param'));
+            var bzbh = param.BZBH;
+            var sbytid = param.SBYTID;
 
             db.selectSql({
                 name: 'CBtest',
                 sql: 'SELECT * FROM MRM_WATER_METER_USER where userName="' + LoginName + '"'
             }, function(ret, err) {
                 if (ret.status) {
-                    adilog("正在下载数据", "正在下载数据,请稍后...");
+                    //判断是否有未上传的数据
+                    var bool = false;
+                    var ret = db.selectSqlSync({
+                        name: 'CBtest',
+                        sql: 'select * from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where BZBH="' + bzbh +
+                            '" and SBYTID="' + sbytid +
+                            '" and SFXG="1" and SFSC="1" and userName="' + LoginName +
+                            '") and SFSC="0" and userName="' + LoginName +
+                            '"'
+                    });
+                    if (ret.data.length > 0) {
+                        bool = true;
+                    }
+                    var ret = db.selectSqlSync({
+                        name: 'CBtest',
+                        sql: 'select * from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and SFXG="1" and SFSC="0" and userName="' + LoginName + '"'
+                    });
+                    if (ret.data.length > 0) {
+                        bool = true;
+                    }
 
-                    UsersDataSingleNumer = 0
-                    downloadUsersingle(bzbh);
+                    if (bool) {
+                        api.confirm({
+                            title: '提示',
+                            msg: '存在未上传的水表接收数据或图片，当前操作会清除该数据，是否确定！',
+                            buttons: ['确定', '取消']
+                        }, function(ret, err) {
+                            var index = ret.buttonIndex;
+                            if (index == 1) {
+                                //删除所有的水表接收数据，重新下载
+                                var ret = db.executeSqlSync({
+                                    name: 'CBtest',
+                                    sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName +
+                                        '") and userName="' + LoginName +
+                                        '"'
+                                });
+                                var ret = db.executeSqlSync({
+                                    name: 'CBtest',
+                                    sql: 'delete from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                                });
+                                adilog("正在下载数据", "正在下载数据,请稍后...");
+
+                                UsersDataSingleNumer = 0
+                                downloadUsersingle(bzbh, sbytid);
+                            }
+                        });
+                    } else {
+                        var ret = db.executeSqlSync({
+                            name: 'CBtest',
+                            sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '") and userName="' +
+                                LoginName + '"'
+                        });
+                        var ret = db.executeSqlSync({
+                            name: 'CBtest',
+                            sql: 'delete from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                        });
+                        adilog("正在下载数据", "正在下载数据,请稍后...");
+
+                        UsersDataSingleNumer = 0
+                        downloadUsersingle(bzbh, sbytid);
+                    }
                 } else {
 
                 }
@@ -662,11 +717,156 @@
                 });
                 return;
             }
+
+            dataxcaq = [];
+            dataxcaqIndex = 0;
             Usersdownload();
         },
         'AllDelete': function() {
+            BookId = [];
             Usersdelete();
+        },
+        'bzbhDownload': function() {
+            if (api.connectionType != 'none') {
+                var bool = false;
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'select * from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where SFXG="1" and SFSC="1" and userName="' + LoginName + '") and SFSC="0" and userName="' + LoginName + '"'
+                });
+                if (ret.data.length > 0) {
+                    bool = true;
+                }
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'select * from MRM_WATER_METER_USER where SFXG="1" and SFSC="0" and userName="' + LoginName + '"'
+                });
+                if (ret.data.length > 0) {
+                    bool = true;
+                }
+
+                if (bool) {
+                    api.confirm({
+                        title: '提示',
+                        msg: '存在未上传的水表接收数据或图片，当前操作会清除该数据，是否确定！',
+                        buttons: ['确定', '取消']
+                    }, function(ret, err) {
+                        var index = ret.buttonIndex;
+                        if (index == 1) {
+                            //删除所有的水表接收数据，重新下载
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_PHOTOS where userName="' + LoginName + '"'
+                            });
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_USER where userName="' + LoginName + '"'
+                            });
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+                            });
+                            bzbhDownload();
+                        }
+                    });
+                } else {
+                    //删除所有的水表接收数据，重新下载
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'delete from MRM_WATER_METER_PHOTOS where userName="' + LoginName + '"'
+                    });
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'delete from MRM_WATER_METER_USER where userName="' + LoginName + '"'
+                    });
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'delete from MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+                    });
+                    bzbhDownload();
+                }
+            } else {
+                api.toast({
+                    msg: '当前处于无网状态，无法下载数据。',
+                    duration: 2000,
+                    location: 'bottom'
+                });
+            }
         }
+    }
+
+    function bzbhDownload() {
+        adilog("正在下载报装编号数据", "正在下载报装编号数据,请稍后...");
+        var Parameter = {
+            "ClientId": api.deviceId,
+            "ClientName": api.deviceModel,
+            "OperatorId": $api.getStorage("cbOperatorId"),
+            "OperatorName": $api.getStorage("cbOperatorName"),
+            "Required": 'BZBH=&SBYTID=',
+            "Type": '157'
+        }
+        var body = {
+            body: JSON.stringify({
+                "UserName": $api.getStorage("cbOperatorName"),
+                "Password": $api.getStorage("cbPassword"),
+                "SerialNo": dataTime(),
+                "Method": "R999",
+                "Parameter": JSON.stringify(Parameter)
+            })
+        }
+        fnPost1('', body, 'application/json', false, function(ret, err) {
+            if (ret) {
+                if (ret.Status == 0) {
+                    if (ret.Data != '') {
+                        Booksdata = [];
+                        if (ret.Data != "" && ret.Data != " ") {
+                            Booksdata = JSON.parse(ret.Data);
+                        }
+
+                        for (var i = 0; i < Booksdata.length; i++) {
+                            var bookdata = db.selectSqlSync({
+                                name: 'CBtest',
+                                sql: 'select * from MRM_WATER_METER_BOOK where BZBH="' + Booksdata[i].APPLICATIONNO + '" and SBYTID="' + Booksdata[i].SBYTID + '" and userName="' + LoginName + '"'
+                            });
+
+                            if (bookdata.data.length > 0) { //已存在
+                                var ret = db.executeSqlSync({
+                                    name: 'CBtest',
+                                    sql: 'update MRM_WATER_METER_BOOK set BBCYHZS="' + Booksdata[i].DJSHS + '" where BZBH="' + Booksdata[i].APPLICATIONNO + '" and userName="' + LoginName + '"'
+                                });
+                            } else { //不存在
+                                var ret = db.executeSqlSync({
+                                    name: 'CBtest',
+                                    sql: 'INSERT INTO MRM_WATER_METER_BOOK(userName, BZBH, BBCYHZS, CBNUMER, NOTDOWNLOAD, SBYTID, SBYT) VALUES ("' + LoginName +
+                                        '","' + Booksdata[i].APPLICATIONNO +
+                                        '","' + Booksdata[i].DJSHS +
+                                        '","0","0","' + Booksdata[i].SBYTID +
+                                        '","' + Booksdata[i].SBYT + '")'
+                                });
+                            }
+
+                            var bookdata = db.selectSqlSync({
+                                name: 'CBtest',
+                                sql: 'select * from MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+                            });
+                            var value = GetPercent(bookdata.data.length, Booksdata.length);
+                            updateAdilogData("正在下载数据 " + bookdata.data.length + "/" + Booksdata.length,
+                                "正在下载数据,请稍后...", value);
+                        }
+                    }
+                } else {
+                    api.toast({
+                        msg: ret.Message,
+                        duration: 2000,
+                        location: 'bottom'
+                    });
+                }
+            } else {
+                alert(JSON.stringify(err));
+            }
+            var UIActionProgress = api.require('UIActionProgress');
+            UIActionProgress.close();
+            queryBook();
+        })
     }
 
     var PageIndexSingle = 1; //页码
@@ -676,10 +876,10 @@
     var UsersDataSingleNumer = 0;
     var book;
     //下载单个抄表册数据
-    function downloadUsersingle(bzbh) {
+    function downloadUsersingle(bzbh, sbytid) {
         db.selectSql({
             name: 'CBtest',
-            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName + '"'
+            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
         }, function(ret, err) {
             if (ret.status) {
                 var nowDataLength = ret.data.length / PageIndexSingleNumer;
@@ -692,12 +892,12 @@
 
                 var bookdata = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_WATER_METER_BOOK WHERE BZBH = \'' + bzbh + '\' and userName="' + LoginName + '"'
+                    sql: 'SELECT * FROM MRM_WATER_METER_BOOK WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
                 });
                 book = bookdata.data[0];
                 var userdata = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH = \'' + bzbh + '\' and userName="' + LoginName + '"'
+                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
                 });
 
                 var value = GetPercent(userdata.data.length, book.BBCYHZS);
@@ -709,7 +909,7 @@
                     "ClientName": api.deviceModel,
                     "OperatorId": $api.getStorage('cbOperatorId'),
                     "OperatorName": $api.getStorage('cbOperatorName'),
-                    "REQUIRED": "PAGE_CODE=" + PageIndexSingle + "&BZBH=" + bzbh + "",
+                    "REQUIRED": "PAGE_CODE=" + PageIndexSingle + "&BZBH=" + bzbh + "&SBYTID=" + sbytid,
                     "Type": '158'
                 }
                 var body = {
@@ -722,6 +922,15 @@
                     })
                 }
                 fnPost1('', body, 'application/json', false, function(ret, err) {
+                    // ret = {
+                    //     "Status": 0,
+                    //     "Message": "成功",
+                    //     "SerialNo": "2020-08-20 19:19:44",
+                    //     "Summary": "PageCode=1&PageSize=500&RecordCount=5",
+                    //     "Totals": 0,
+                    //     "Method": "R999",
+                    //     "Data": "[{\"ZHBH\":\"930000056\",\"YHBH\":\"930000056\",\"YHMC\":\"放号测试\",\"YHDZ\":\"十二桥路\",\"LXR\":\"测试\",\"SBWZ\":\"一楼十五号\",\"SBBH\":\"15\",\"GDDH\":\"11111111\",\"YDDH\":\"11111111\",\"CBCH\":null,\"CBXH\":null,\"YSXZID\":673,\"XZXFID\":673,\"YSXZ\":\"市区机关用水673\",\"XZXF\":\"市区机关用水673\",\"KJ\":25,\"CBYBH\":null,\"YYQY\":\"001093\",\"GSPQ\":\"城东工作站\",\"SBQD\":0,\"CBZQ\":\"每月抄表\",\"SBYT\":\"非户表\",\"JWD\":null,\"RFID\":null,\"SBLX\":\"物联网智能表\",\"SBLXID\":\"6\",\"CJBH\":\"930000056\",\"PATH\":null,\"BZBH\":\"CX2020071700025\",\"SBYTID\":\"8\"},{\"ZHBH\":\"930000057\",\"YHBH\":\"930000057\",\"YHMC\":\"放号测试\",\"YHDZ\":\"十二桥路\",\"LXR\":\"测试\",\"SBWZ\":\"一楼十六号\",\"SBBH\":\"16\",\"GDDH\":\"11111111\",\"YDDH\":\"11111111\",\"CBCH\":null,\"CBXH\":null,\"YSXZID\":673,\"XZXFID\":673,\"YSXZ\":\"市区机关用水673\",\"XZXF\":\"市区机关用水673\",\"KJ\":25,\"CBYBH\":null,\"YYQY\":\"001093\",\"GSPQ\":\"城东工作站\",\"SBQD\":0,\"CBZQ\":\"每月抄表\",\"SBYT\":\"非户表\",\"JWD\":null,\"RFID\":null,\"SBLX\":\"物联网智能表\",\"SBLXID\":\"6\",\"CJBH\":\"930000057\",\"PATH\":null,\"BZBH\":\"CX2020071700025\",\"SBYTID\":\"8\"}]"
+                    // };
                     if (ret.Status == 0) {
                         UsersDataSingle = [];
                         if (ret.Data != "" && ret.Data != " ") {
@@ -738,7 +947,7 @@
                         if (RecordCountSingle > 0) {
                             var ret1 = db.selectSqlSync({
                                 name: 'CBtest',
-                                sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName + '"'
+                                sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
                             });
                             if (ret1.status) {
                                 var datalistUsers = ret1.data;
@@ -747,7 +956,7 @@
                                     var sqlvalue = ""
                                     var retbooks1 = db.selectSqlSync({
                                         name: 'CBtest',
-                                        sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName + '"'
+                                        sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
                                     });
                                     var num = 0;
                                     for (var i in UsersDataSingle) {
@@ -794,7 +1003,13 @@
                                                     '"0",' +
                                                     '" ",' +
                                                     '"' + (UsersDataSingle[i].LXR == null ? " " : UsersDataSingle[i].LXR) + '",' +
-                                                    '"' + (UsersDataSingle[i].BZBH == null ? " " : UsersDataSingle[i].BZBH) + '" ';
+                                                    '"' + (UsersDataSingle[i].BZBH == null ? " " : UsersDataSingle[i].BZBH) + '",' +
+                                                    '"' + (UsersDataSingle[i].YSXZID == null ? " " : UsersDataSingle[i].YSXZID) + '", ' +
+                                                    '"' + (UsersDataSingle[i].XZXFID == null ? " " : UsersDataSingle[i].XZXFID) + '", ' +
+                                                    '"' + (UsersDataSingle[i].SBLX == null ? " " : UsersDataSingle[i].SBLX) + '", ' +
+                                                    '"' + (UsersDataSingle[i].SBLXID == null ? " " : UsersDataSingle[i].SBLXID) + '", ' +
+                                                    '"' + sbytid + '", ' +
+                                                    '"' + (UsersDataSingle[i].CJBH == null ? " " : UsersDataSingle[i].CJBH) + '" ';
 
                                                 num++;
                                                 if (retbooks1.status) {
@@ -837,7 +1052,13 @@
                                             'SFXG,' +
                                             'CWXX,' +
                                             'LXR,' +
-                                            'BZBH) ' + sqlvalue
+                                            'BZBH,' +
+                                            'YSXZID,' +
+                                            'XZXFID,' +
+                                            'SBLX,' +
+                                            'SBLXID,' +
+                                            'SBYTID,' +
+                                            'CJBH) ' + sqlvalue
                                     });
                                     if (insertRet.status) {
 
@@ -845,16 +1066,16 @@
                                     // 循环插入完之后，更新渲染页面
                                     var retbooks1 = db.selectSqlSync({
                                         name: 'CBtest',
-                                        sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName + '"'
+                                        sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
                                     });
                                     if (retbooks1.status) {
                                         var contentNumer = retbooks1.data.length
                                         var retbook2 = db.executeSqlSync({
                                             name: 'CBtest',
-                                            sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName +
+                                            sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName +
                                                 '"'
                                         });
-                                        $(".XZ_" + bzbh + "").html(contentNumer);
+                                        $(".XZ_" + bzbh + sbytid).html(contentNumer);
                                     }
                                 } else {
                                     api.toast({
@@ -868,62 +1089,109 @@
                             // 判断页数加加
                             if (UsersDataSingle.length > 0 && (PageIndexSingle - 1) * 100 + UsersDataSingle.length < RecordCountSingle) {
                                 PageIndexSingle++;
-                                downloadUsersingle(bzbh);
+                                downloadUsersingle(bzbh, sbytid);
                             } else {
-                                var UIActionProgress = api.require('UIActionProgress');
-                                UIActionProgress.close();
-
-                                // 有抄表本但是没有抄表数据情况下提示
-                                UsersDataSingleNumer = 0
-                                api.toast({
-                                    msg: '下载完成',
-                                    duration: 2000,
-                                    location: 'middle'
-                                });
-                                $(".SFXZ_" + bzbh + "").html('<div class="li-one yesdownload">已下载</div>')
-
-                                // 循环插入完之后，更新渲染页面
-                                var retbooks1 = db.selectSqlSync({
-                                    name: 'CBtest',
-                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + bzbh + '\' and userName="' + LoginName + '"'
-                                });
-                                if (retbooks1.status) {
-                                    var contentNumer = retbooks1.data.length
-                                    var retbook2 = db.executeSqlSync({
-                                        name: 'CBtest',
-                                        sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH=\'' + bzbh +
-                                            '\' and userName="' + LoginName + '"'
-                                    });
-                                    $(".XZ_" + bzbh + "").html(contentNumer);
+                                //水表接收数据下载之后，更新报装编号的总数数据
+                                var Parameter = {
+                                    "ClientId": api.deviceId,
+                                    "ClientName": api.deviceModel,
+                                    "OperatorId": $api.getStorage("cbOperatorId"),
+                                    "OperatorName": $api.getStorage("cbOperatorName"),
+                                    "Required": 'BZBH=' + bzbh + '&SBYTID=' + sbytid,
+                                    "Type": '157'
                                 }
+                                var body = {
+                                    body: JSON.stringify({
+                                        "UserName": $api.getStorage("cbOperatorName"),
+                                        "Password": $api.getStorage("cbPassword"),
+                                        "SerialNo": dataTime(),
+                                        "Method": "R999",
+                                        "Parameter": JSON.stringify(Parameter)
+                                    })
+                                }
+                                fnPost1('', body, 'application/json', false, function(ret, err) {
+                                    if (ret) {
+                                        if (ret.Status == 0) {
+                                            if (ret.Data != '') {
+                                                var Data = [];
+                                                if (ret.Data != "" && ret.Data != " ") {
+                                                    Data = JSON.parse(ret.Data);
+                                                }
 
-                                db.selectSql({
-                                    name: 'CBtest',
-                                    sql: 'SELECT * FROM MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
-                                }, function(ret, err) {
-                                    if (ret.status) {
-                                        var dataList = ret.data;
+                                                for (var i = 0; i < Data.length; i++) {
+                                                    var retbook2 = db.executeSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'UPDATE MRM_WATER_METER_BOOK SET BBCYHZS="' + Data[i].DJSHS + '" WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                                                    });
+                                                    $(".ZS_" + bzbh + sbytid).html(Data[i].DJSHS);
+                                                }
 
-                                        var contentNumer = 0;
-                                        for (var i = 0; i < dataList.length; i++) {
-                                            var a = Number(dataList[i].BBCYHZS)
-                                            contentNumer += a
+                                                // 有抄表本但是没有抄表数据情况下提示
+                                                UsersDataSingleNumer = 0
+                                                api.toast({
+                                                    msg: '下载完成',
+                                                    duration: 2000,
+                                                    location: 'middle'
+                                                });
+                                                $(".SFXZ_" + bzbh + sbytid).html('<div class="li-one yesdownload">已下载</div>')
+
+                                                // 循环插入完之后，更新渲染页面
+                                                var retbooks1 = db.selectSqlSync({
+                                                    name: 'CBtest',
+                                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                                                });
+                                                if (retbooks1.status) {
+                                                    var contentNumer = retbooks1.data.length
+                                                    var retbook2 = db.executeSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER="' + contentNumer + '", NOTDOWNLOAD=1 WHERE BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' +
+                                                            LoginName + '"'
+                                                    });
+                                                    $(".XZ_" + bzbh + sbytid).html(contentNumer);
+                                                }
+
+                                                db.selectSql({
+                                                    name: 'CBtest',
+                                                    sql: 'SELECT * FROM MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+                                                }, function(ret, err) {
+                                                    if (ret.status) {
+                                                        var dataList = ret.data;
+
+                                                        var contentNumer = 0;
+                                                        for (var i = 0; i < dataList.length; i++) {
+                                                            var a = Number(dataList[i].BBCYHZS)
+                                                            contentNumer += a
+                                                        }
+                                                        $('#hjbs').text(contentNumer)
+                                                    } else {
+
+                                                    }
+                                                });
+                                                var jsdata = db.selectSqlSync({
+                                                    name: 'CBtest',
+                                                    sql: 'select * from MRM_WATER_METER_USER where SFXG=1 and userName="' + LoginName + '" and YHBH!=" "'
+                                                });
+                                                var wjsdata = db.selectSqlSync({
+                                                    name: 'CBtest',
+                                                    sql: 'select * from MRM_WATER_METER_USER where SFXG=0 and userName="' + LoginName + '" and YHBH!=" "'
+                                                });
+                                                $('#jsbs').text(jsdata.data.length);
+                                                $('#wjs').text(wjsdata.data.length);
+                                            }
+                                        } else {
+                                            api.toast({
+                                                msg: ret.Message,
+                                                duration: 2000,
+                                                location: 'bottom'
+                                            });
                                         }
-                                        $('#hjbs').text(contentNumer)
                                     } else {
-
+                                        alert(JSON.stringify(err));
                                     }
-                                });
-                                var jsdata = db.selectSqlSync({
-                                    name: 'CBtest',
-                                    sql: 'select * from MRM_WATER_METER_USER where SFXG=1 and userName="' + LoginName + '" and YHBH!=" "'
-                                });
-                                var wjsdata = db.selectSqlSync({
-                                    name: 'CBtest',
-                                    sql: 'select * from MRM_WATER_METER_USER where SFXG=0 and userName="' + LoginName + '" and YHBH!=" "'
-                                });
-                                $('#jsbs').text(jsdata.data.length);
-                                $('#wjs').text(wjsdata.data.length);
+                                    var UIActionProgress = api.require('UIActionProgress');
+                                    UIActionProgress.close();
+                                    queryBook();
+                                })
                             }
                         } else {
                             var UIActionProgress = api.require('UIActionProgress');
@@ -933,17 +1201,35 @@
                                 duration: 2000,
                                 location: 'middle'
                             });
-                            $(".SFXZ_" + bzbh + "").html('<div class="li-one yesdownload">已下载</div>');
+                            $(".SFXZ_" + bzbh + sbytid).html('<div class="li-one yesdownload">已下载</div>');
+
+                            //当前报装编号没有数据了
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select * from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName +
+                                    '") and userName="' + LoginName + '"'
+                            });
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_USER where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                            });
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_BOOK where BZBH="' + bzbh + '" and SBYTID="' + sbytid + '" and userName="' + LoginName + '"'
+                            });
+                            queryBook();
                         }
                     } else {
                         var UIActionProgress = api.require('UIActionProgress');
                         UIActionProgress.close();
                         alert(JSON.stringify(err));
+                        queryBook();
                     }
                 });
             } else {
                 var UIActionProgress = api.require('UIActionProgress');
                 UIActionProgress.close();
+                queryBook();
             }
         });
     }
@@ -965,7 +1251,13 @@
         for (var i = 0; i < isNotchecked.length; i++) {
             if (isNotchecked[i].checked) {
                 checked = true;
-                var isCheckedTrue = isNotchecked[i].value;
+                var param = JSON.parse(isNotchecked[i].value);
+
+                var isCheckedTrue = {
+                    "BZBH": param.BZBH,
+                    "SBYTID": param.SBYTID
+                }
+
                 dataxcaq.push(isCheckedTrue);
             }
         }
@@ -979,10 +1271,75 @@
                 sql: 'SELECT * FROM MRM_WATER_METER_USER where userName="' + LoginName + '"'
             }, function(ret, err) {
                 if (ret.status) {
-                    adilog("正在下载用户数据", "正在下载用户数据,请稍后...");
+                    //判断是否有未上传的数据
+                    var bool = false;
+                    for (var i = 0; i < dataxcaq.length; i++) {
+                        var ret = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select * from MRM_WATER_METER_PHOTOS where YHBH in ' +
+                                '(select YHBH from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID + '" and SFXG="1" and SFSC="1" and userName="' + LoginName +
+                                '") and SFSC="0" and userName="' + LoginName + '"'
+                        });
+                        if (ret.data.length > 0) {
+                            bool = true;
+                            break;
+                        }
+                        var ret = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select * from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID + '" and SFXG="1" and SFSC="0" and userName="' + LoginName + '"'
+                        });
+                        if (ret.data.length > 0) {
+                            bool = true;
+                            break;
+                        }
+                    }
 
-                    downloadUserAll();
+                    if (bool) {
+                        api.confirm({
+                            title: '提示',
+                            msg: '存在未上传的水表接收数据或图片，当前操作会清除该数据，是否确定！',
+                            buttons: ['确定', '取消']
+                        }, function(ret, err) {
+                            var index = ret.buttonIndex;
+                            if (index == 1) {
+                                //删除所有的水表接收数据，重新下载
+                                for (var i = 0; i < dataxcaq.length; i++) {
+                                    var ret = db.executeSqlSync({
+                                        name: 'CBtest',
+                                        sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID +
+                                            '" and userName="' + LoginName + '") and userName="' + LoginName +
+                                            '"'
+                                    });
+                                    var ret = db.executeSqlSync({
+                                        name: 'CBtest',
+                                        sql: 'delete from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID + '" and userName="' + LoginName + '"'
+                                    });
+                                }
+                                adilog("正在下载用户数据", "正在下载用户数据,请稍后...");
+
+                                downloadUserAll();
+                            }
+                        });
+                    } else {
+                        //删除所有的水表接收数据，重新下载
+                        for (var i = 0; i < dataxcaq.length; i++) {
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select YHBH from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID +
+                                    '" and userName="' + LoginName + '") and userName="' + LoginName +
+                                    '"'
+                            });
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'delete from MRM_WATER_METER_USER where BZBH="' + dataxcaq[i].BZBH + '" and SBYTID="' + dataxcaq[i].SBYTID + '" and userName="' + LoginName + '"'
+                            });
+                        }
+                        adilog("正在下载用户数据", "正在下载用户数据,请稍后...");
+
+                        downloadUserAll();
+                    }
                 } else {
+                    // console.log(JSON.stringify(err))
                 }
             });
         }
@@ -998,7 +1355,13 @@
         for (var i = 0; i < isNotchecked.length; i++) {
             if (isNotchecked[i].checked) {
                 checked = true;
-                var isCheckedTrue = isNotchecked[i].value;
+                var param = JSON.parse(isNotchecked[i].value);
+
+                var isCheckedTrue = {
+                    "BZBH": param.BZBH,
+                    "SBYTID": param.SBYTID
+                }
+
                 BookId.push(isCheckedTrue);
             }
         }
@@ -1016,15 +1379,15 @@
                     for (var i = 0; i < BookId.length; i++) {
                         var naviphotodata = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'delete from MRM_WATER_METER_USER where BZBH="' + BookId[i] + '" and userName="' + LoginName + '"'
+                            sql: 'delete from MRM_WATER_METER_USER where BZBH="' + BookId[i].BZBH + '" and SBYTID="' + BookId[i].SBYTID + '" and userName="' + LoginName + '"'
                         });
                         if (naviphotodata.status) {
-                            $(".XZ_" + BookId[i] + "").html(0);
-                            $(".SFXZ_" + BookId[i] + "").html('<div class="notdownload">未下载</div>');
+                            $(".XZ_" + BookId[i].BZBH + BookId[i].SBYTID).html(0);
+                            $(".SFXZ_" + BookId[i].BZBH + BookId[i].SBYTID).html('<div class="notdownload">未下载</div>');
                         }
                         var naviphotodata = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'update MRM_WATER_METER_BOOK set CBNUMER="0",NOTDOWNLOAD="0" where BZBH="' + BookId[i] + '" and userName="' + LoginName + '"'
+                            sql: 'update MRM_WATER_METER_BOOK set CBNUMER="0",NOTDOWNLOAD="0" where BZBH="' + BookId[i].BZBH + '" and SBYTID="' + BookId[i].SBYTID + '" and userName="' + LoginName + '"'
                         });
                     }
                     $('#parantChexbox').prop("checked", false)
@@ -1067,7 +1430,7 @@
             var UsersDataSingleNumer1 = 0
             db.selectSql({
                 name: 'CBtest',
-                sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
             }, function(ret, err) {
                 if (ret.status) {
                     var nowDataLength = ret.data.length / PageIndexNumer
@@ -1085,7 +1448,7 @@
                         "ClientName": api.deviceModel,
                         "OperatorId": $api.getStorage('cbOperatorId'),
                         "OperatorName": $api.getStorage('cbOperatorName'),
-                        "REQUIRED": "PAGE_CODE=" + PageIndex + "&BZBH=" + dataxcaq[dataxcaqIndex] + "",
+                        "REQUIRED": "PAGE_CODE=" + PageIndex + "&BZBH=" + dataxcaq[dataxcaqIndex].BZBH + "&SBYTID=" + dataxcaq[dataxcaqIndex].SBYTID,
                         "Type": '158'
                     }
                     var body = {
@@ -1110,14 +1473,14 @@
 
                             var bookdata = db.selectSqlSync({
                                 name: 'CBtest',
-                                sql: 'SELECT * FROM MRM_WATER_METER_BOOK WHERE BZBH = \'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                                sql: 'SELECT * FROM MRM_WATER_METER_BOOK WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
                             });
                             book = bookdata.data[0];
 
                             if (UsersData.length != 0) {
                                 var allret = db.selectSqlSync({
                                     name: 'CBtest',
-                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
                                 });
                                 var datalistUsers = allret.data
                                 if (allret.status) {
@@ -1127,7 +1490,7 @@
                                         var sqlvalue = ""
                                         var retbooks1 = db.selectSqlSync({
                                             name: 'CBtest',
-                                            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                                            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
                                         });
                                         var num = 0;
                                         for (var i in UsersData) {
@@ -1173,7 +1536,14 @@
                                                         '"0",' +
                                                         '"0",' +
                                                         '" ",' +
-                                                        '"' + (UsersData[i].BZBH == null ? " " : UsersData[i].BZBH) + '" ';
+                                                        '"' + (UsersData[i].LXR == null ? " " : UsersData[i].LXR) + '",' +
+                                                        '"' + (UsersData[i].BZBH == null ? " " : UsersData[i].BZBH) + '",' +
+                                                        '"' + (UsersData[i].YSXZID == null ? " " : UsersData[i].YSXZID) + '", ' +
+                                                        '"' + (UsersData[i].XZXFID == null ? " " : UsersData[i].XZXFID) + '", ' +
+                                                        '"' + (UsersData[i].SBLX == null ? " " : UsersData[i].SBLX) + '", ' +
+                                                        '"' + (UsersData[i].SBLXID == null ? " " : UsersData[i].SBLXID) + '", ' +
+                                                        '"' + dataxcaq[dataxcaqIndex].SBYTID + '", ' +
+                                                        '"' + (UsersData[i].CJBH == null ? " " : UsersData[i].CJBH) + '" ';
                                                     num++;
                                                     if (retbooks1.status) {
                                                         var value = GetPercent(retbooks1.data.length + num, book.BBCYHZS);
@@ -1217,7 +1587,14 @@
                                                 'SFSC,' +
                                                 'SFXG,' +
                                                 'CWXX,' +
-                                                'BZBH) ' + sqlvalue
+                                                'LXR,' +
+                                                'BZBH,' +
+                                                'YSXZID,' +
+                                                'XZXFID,' +
+                                                'SBLX,' +
+                                                'SBLXID,' +
+                                                'SBYTID,' +
+                                                'CJBH) ' + sqlvalue
                                         });
                                         if (insertRet.status) {
                                             //更新下载进度条
@@ -1226,18 +1603,18 @@
                                         //下载数据循环添加完成之后，对页面和抄表册数据进行渲染
                                         var retbooks1 = db.selectSqlSync({
                                             name: 'CBtest',
-                                            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                                            sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
                                         });
                                         if (retbooks1.status) {
                                             var contentNumer = retbooks1.data.length
                                             var retbook2 = db.executeSqlSync({
                                                 name: 'CBtest',
-                                                sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] +
-                                                    '\' and userName="' + LoginName +
+                                                sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID +
+                                                    '" and userName="' + LoginName +
                                                     '"'
                                             });
-                                            $(".XZ_" + dataxcaq[dataxcaqIndex] + "").html(contentNumer);
-                                            $(".SFXZ_" + dataxcaq[dataxcaqIndex] + "").html('<div class="li-one yesdownload">已下载</div>');
+                                            $(".XZ_" + dataxcaq[dataxcaqIndex].BZBH + dataxcaq[dataxcaqIndex].SBYTID).html(contentNumer);
+                                            $(".SFXZ_" + dataxcaq[dataxcaqIndex].BZBH + dataxcaq[dataxcaqIndex].SBYTID).html('<div class="li-one yesdownload">已下载</div>');
                                         }
                                     } else {
 
@@ -1247,18 +1624,19 @@
                                 //下载数据循环添加完成之后，对页面和抄表册数据进行渲染
                                 var retbooks1 = db.selectSqlSync({
                                     name: 'CBtest',
-                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' + LoginName + '"'
+                                    sql: 'SELECT * FROM MRM_WATER_METER_USER WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
                                 });
                                 if (retbooks1.status) {
                                     var contentNumer = retbooks1.data.length
                                     var retbook2 = db.executeSqlSync({
                                         name: 'CBtest',
-                                        sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH=\'' + dataxcaq[dataxcaqIndex] + '\' and userName="' +
+                                        sql: 'UPDATE MRM_WATER_METER_BOOK SET CBNUMER=\'' + contentNumer + '\', NOTDOWNLOAD=1 WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID +
+                                            '" and userName="' +
                                             LoginName +
                                             '"'
                                     });
-                                    $(".XZ_" + dataxcaq[dataxcaqIndex] + "").html(contentNumer);
-                                    $(".SFXZ_" + dataxcaq[dataxcaqIndex] + "").html('<div class="li-one yesdownload">已下载</div>');
+                                    $(".XZ_" + dataxcaq[dataxcaqIndex].BZBH + dataxcaq[dataxcaqIndex].SBYTID).html(contentNumer);
+                                    $(".SFXZ_" + dataxcaq[dataxcaqIndex].BZBH + dataxcaq[dataxcaqIndex].SBYTID).html('<div class="li-one yesdownload">已下载</div>');
                                 }
                             }
 
@@ -1270,70 +1648,148 @@
                                 PageIndex++;
                                 downloadUserAll()
                             } else {
-                                // 如果下标小于循环出来全部抄表本的长度，继续下载。
-                                insertRecords("用户数据下载", "抄表册" + dataxcaq[dataxcaqIndex] + "下载用户数据完成");
-                                dataxcaqIndex++;
-                                if (dataxcaqIndex < dataxcaq.length) {
-                                    // downloadNumer = 0
-                                    PageIndex = 1;
-                                    downloadUserAll();
-                                } else {
-                                    var UIActionProgress = api.require('UIActionProgress');
-                                    UIActionProgress.close();
-                                    // 下标小于或者等于抄表本册号长度后下载完成
-                                    api.toast({
-                                        msg: '下载完成',
-                                        duration: 2000,
-                                        location: 'middle'
-                                    });
-                                    // 下载完成后未下载字体变成绿色字变成已下载
-                                    $('#parantChexbox').prop("checked", false)
-                                    $("#center input[name='demo1']").prop("checked", false)
-
-                                    //所有勾选中的抄表册下载完成之后，更新顶部的应抄册数和应抄表数
-                                    db.selectSql({
-                                        name: 'CBtest',
-                                        sql: 'SELECT * FROM MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
-                                    }, function(ret, err) {
-                                        if (ret.status) {
-                                            var dataList = ret.data;
-
-                                            var contentNumer = 0;
-                                            for (var i = 0; i < dataList.length; i++) {
-                                                var a = Number(dataList[i].BBCYHZS)
-                                                contentNumer += a
-                                            }
-                                            $('#hjbs').text(contentNumer)
-                                        } else {
-
-                                        }
-                                    });
-                                    var jsdata = db.selectSqlSync({
-                                        name: 'CBtest',
-                                        sql: 'select * from MRM_WATER_METER_USER where SFXG=1 and userName="' + LoginName + '" and YHBH!=" "'
-                                    });
-                                    var wjsdata = db.selectSqlSync({
-                                        name: 'CBtest',
-                                        sql: 'select * from MRM_WATER_METER_USER where SFXG=0 and userName="' + LoginName + '" and YHBH!=" "'
-                                    });
-                                    $('#jsbs').text(jsdata.data.length);
-                                    $('#wjs').text(wjsdata.data.length);
+                                //当前表册下载完成，更新报装编号数据。
+                                var Parameter = {
+                                    "ClientId": api.deviceId,
+                                    "ClientName": api.deviceModel,
+                                    "OperatorId": $api.getStorage("cbOperatorId"),
+                                    "OperatorName": $api.getStorage("cbOperatorName"),
+                                    "Required": 'BZBH=' + dataxcaq[dataxcaqIndex].BZBH + '&SBYTID=' + dataxcaq[dataxcaqIndex].SBYTID,
+                                    "Type": '157'
                                 }
+                                var body = {
+                                    body: JSON.stringify({
+                                        "UserName": $api.getStorage("cbOperatorName"),
+                                        "Password": $api.getStorage("cbPassword"),
+                                        "SerialNo": dataTime(),
+                                        "Method": "R999",
+                                        "Parameter": JSON.stringify(Parameter)
+                                    })
+                                }
+                                fnPost1('', body, 'application/json', false, function(ret, err) {
+                                    if (ret) {
+                                        if (ret.Status == 0) {
+                                            if (ret.Data != '') {
+                                                var Data = [];
+                                                if (ret.Data != "" && ret.Data != " ") {
+                                                    Data = JSON.parse(ret.Data);
+                                                }
+
+                                                if (Data.length > 0) {
+                                                    for (var i = 0; i < Data.length; i++) {
+                                                        var retbook2 = db.executeSqlSync({
+                                                            name: 'CBtest',
+                                                            sql: 'UPDATE MRM_WATER_METER_BOOK SET BBCYHZS="' + Data[i].DJSHS + '" WHERE BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[
+                                                                dataxcaqIndex].SBYTID + '" and userName="' + LoginName + '"'
+                                                        });
+
+                                                        $(".ZS_" + dataxcaq[dataxcaqIndex].BZBH + dataxcaq[dataxcaqIndex].SBYTID).html(Data[i].DJSHS);
+                                                    }
+                                                } else {
+                                                    //当前报装编号没有数据了
+                                                    var ret = db.executeSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'delete from MRM_WATER_METER_PHOTOS where YHBH in (select * from MRM_WATER_METER_USER where BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' +
+                                                            dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' +
+                                                            LoginName + '") and userName="' + LoginName + '"'
+                                                    });
+                                                    var ret = db.executeSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'delete from MRM_WATER_METER_USER where BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' +
+                                                            LoginName + '"'
+                                                    });
+                                                    var ret = db.executeSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'delete from MRM_WATER_METER_BOOK where BZBH="' + dataxcaq[dataxcaqIndex].BZBH + '" and SBYTID="' + dataxcaq[dataxcaqIndex].SBYTID + '" and userName="' +
+                                                            LoginName + '"'
+                                                    });
+                                                }
+                                                // 如果下标小于循环出来全部抄表本的长度，继续下载。
+                                                insertRecords("用户数据下载", "抄表册" + dataxcaq[dataxcaqIndex].BZBH + "下载用户数据完成");
+                                                dataxcaqIndex++;
+                                                if (dataxcaqIndex < dataxcaq.length) {
+                                                    // downloadNumer = 0
+                                                    PageIndex = 1;
+                                                    downloadUserAll();
+                                                } else {
+                                                    var UIActionProgress = api.require('UIActionProgress');
+                                                    UIActionProgress.close();
+                                                    // 下标小于或者等于抄表本册号长度后下载完成
+                                                    api.toast({
+                                                        msg: '下载完成',
+                                                        duration: 2000,
+                                                        location: 'middle'
+                                                    });
+                                                    // 下载完成后未下载字体变成绿色字变成已下载
+                                                    $('#parantChexbox').prop("checked", false)
+                                                    $("#center input[name='demo1']").prop("checked", false)
+
+                                                    //所有勾选中的抄表册下载完成之后，更新顶部的应抄册数和应抄表数
+                                                    db.selectSql({
+                                                        name: 'CBtest',
+                                                        sql: 'SELECT * FROM MRM_WATER_METER_BOOK where userName="' + LoginName + '"'
+                                                    }, function(ret, err) {
+                                                        if (ret.status) {
+                                                            var dataList = ret.data;
+
+                                                            var contentNumer = 0;
+                                                            for (var i = 0; i < dataList.length; i++) {
+                                                                var a = Number(dataList[i].BBCYHZS)
+                                                                contentNumer += a
+                                                            }
+                                                            $('#hjbs').text(contentNumer)
+                                                        } else {
+
+                                                        }
+                                                    });
+                                                    var jsdata = db.selectSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'select * from MRM_WATER_METER_USER where SFXG=1 and userName="' + LoginName + '" and YHBH!=" "'
+                                                    });
+                                                    var wjsdata = db.selectSqlSync({
+                                                        name: 'CBtest',
+                                                        sql: 'select * from MRM_WATER_METER_USER where SFXG=0 and userName="' + LoginName + '" and YHBH!=" "'
+                                                    });
+                                                    $('#jsbs').text(jsdata.data.length);
+                                                    $('#wjs').text(wjsdata.data.length);
+                                                    queryBook();
+                                                }
+                                            }
+                                        } else {
+                                            var UIActionProgress = api.require('UIActionProgress');
+                                            UIActionProgress.close();
+                                            api.toast({
+                                                msg: ret.Message,
+                                                duration: 2000,
+                                                location: 'bottom'
+                                            });
+                                            queryBook();
+                                        }
+                                    } else {
+                                        var UIActionProgress = api.require('UIActionProgress');
+                                        UIActionProgress.close();
+                                        alert(JSON.stringify(err));
+                                        queryBook();
+                                    }
+                                })
                             }
                         } else {
                             var UIActionProgress = api.require('UIActionProgress');
                             UIActionProgress.close();
                             alert(JSON.stringify(err));
+                            queryBook();
                         }
                     })
                 } else {
                     var UIActionProgress = api.require('UIActionProgress');
                     UIActionProgress.close();
+                    queryBook();
                 }
             })
         } else {
             var UIActionProgress = api.require('UIActionProgress');
             UIActionProgress.close();
+            queryBook();
         }
     }
 

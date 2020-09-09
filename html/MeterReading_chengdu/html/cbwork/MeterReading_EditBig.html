@@ -465,7 +465,7 @@
 
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_USER_BEAN SET YHBH="' + userNumber + '",YHMC="' + userName + '",YHDZ="' + userAddress + '",SBWZ="' + userEpitope + '",YDDH="' + NationalPhone + '",SFXG="1",GDDH="' + Telephone + '"  WHERE YHBH="' + api.pageParam.YHBH + '" AND userName = "' + LoginName + '"'
+                    sql: 'UPDATE MRM_USERBIG_BEAN SET YHBH="' + userNumber + '",YHMC="' + userName + '",YHDZ="' + userAddress + '",SBWZ="' + userEpitope + '",YDDH="' + NationalPhone + '",SFXG="1",GDDH="' + Telephone + '"  WHERE YHBH="' + api.pageParam.YHBH + '" AND userName = "' + LoginName + '"'
                 });
                 if (ret.status) {
                     api.hideProgress();
@@ -476,7 +476,7 @@
                     });
                     var ret1 = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE YHBH="' + api.pageParam.YHBH + '" AND userName = "' + LoginName + '"'
+                        sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH="' + api.pageParam.YHBH + '" AND userName = "' + LoginName + '"'
                     });
                     if (ret1.status) {
                         api.sendEvent({

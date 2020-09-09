@@ -6,7 +6,6 @@ function fnIntVue() {
             UserNumber: 0, //当前用户的索引
             Memorandum: [], //备忘录
             FromPage: api.pageParam.name, //从哪个页面点击进来
-            cbch: api.pageParam.userCode, //抄表册编号
             YHBH: api.pageParam.useryhbh, //用户编号
             sendUpload: $api.getStorage("sendUpload"), // 是否自动上传数据
             sendUploadPicture: $api.getStorage("sendUploadPicture"), //是否自动上传图片
@@ -70,9 +69,6 @@ function fnIntVue() {
                     return {};
                 } else {
                     var details = this.clearObjectSpace(this.UserList[this.UserNumber]);
-                    if (this.cbch == undefined) {
-                        this.cbch = details.CBCH;
-                    }
                     if (this.YHBH == undefined) {
                         this.YHBH = details.YHBH;
                     }
@@ -260,7 +256,7 @@ function fnIntVue() {
                         this.resetInputActive();
                         var ret = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'UPDATE MRM_BOOKS_BEAN SET XCYH="' + val.YHBH + '" WHERE CBCH="' + this.cbch + '" and userName="' + this.LoginName + '"'
+                            sql: 'UPDATE MRM_BOOKSBIG_BEAN SET XCYH="' + val.YHBH + '" WHERE userName="' + this.LoginName + '"'
                         });
                         this.getMemorandum();
                     }
@@ -334,42 +330,10 @@ function fnIntVue() {
                     this.closeWin();
                 }
             },
-            CodeScanning() {
-                var _this = this;
-                var FNScanner = api.require('FNScanner');
-                FNScanner.open({
-                    autorotation: true
-                }, function(ret, err) {
-                    if (ret) {
-                        if (ret.eventType == 'success') {
-                            var yhbh = ret.content;
-                            for (var i = 0; i < _this.UserList.length; i++) {
-                                if (_this.UserList[i].YHBH == yhbh) {
-                                    _this.UserNumber = i;
-                                    return;
-                                }
-                            }
-                            api.toast({
-                                msg: '当前抄表册没有对应用户信息！',
-                                duration: 2000,
-                                location: 'bottom'
-                            });
-                        }
-                    } else {
-                        api.toast({
-                            msg: 'err.msg',
-                            duration: 2000,
-                            location: 'bottom'
-                        });
-                    }
-                });
-            },
             closeWin() { //关闭当前页面并刷新抄表列表页面
-                if (api.pageParam.name == "MeterReading_userList") {
-                    var jsfun = 'show();';
-                    api.execScript({
-                        name: api.pageParam.name,
-                        script: jsfun
+                if (api.pageParam.name == "MeterReading_userBigList") {
+                    api.sendEvent({
+                        name: 'gxShow'
                     });
                 };
                 api.closeWin();
@@ -449,39 +413,38 @@ function fnIntVue() {
                     }
                 }
 
-                var cbch = this.cbch;
                 var loginname = this.LoginName;
                 var sql = ""; //查询语句
                 var userState = api.pageParam.userState;
                 _this = this;
-                if (this.FromPage == "MeterReading_userList") { //抄表列表页面点击进入
+                if (this.FromPage == "MeterReading_userBigList") { //抄表列表页面点击进入
                     switch (true) {
                         case userState == "all" || userState == "Duplicate" || userState == "ContinuedCopy": //全部 和 重抄 ，续抄
-                            sql = sql = `SELECT * FROM MRM_USER_BEAN WHERE CBCH=${cbch} and ZXBLX!="2" and userName='${loginname}' ORDER BY CBXH`;
+                            sql = sql = `SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" and userName='${loginname}' ORDER BY CBXH`;
                             break;
                         case userState == "NotCopied": //未抄
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" and CBBZ=0 and userName='${loginname}' ORDER BY CBXH`;
+                            sql = `select * from MRM_USERBIG_BEAN where ZXBLX!="2" and CBBZ=0 and userName='${loginname}' ORDER BY CBXH`;
                             break;
                             // case userState == "Immeasurable": //无量
-                            //     sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and CBBZ=1 and YL="0" ORDER BY CBXH`;
+                            //     sql = `select * from MRM_USERBIG_BEAN where CBBZ=1 and YL="0" ORDER BY CBXH`;
                             //     break;
                         case userState == "SLYC": //水量异常
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" AND CBBZ = '1' AND SLZT != '0' and userName='${loginname}' ORDER BY CBXH`;
+                            sql = `select * from MRM_USERBIG_BEAN where ZXBLX!="2" AND CBBZ = '1' AND SLZT != '0' and userName='${loginname}' ORDER BY CBXH`;
                             break;
                         default:
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" AND CBBZ = '1' AND BYXZT = ${userState} and userName='${loginname}' ORDER BY CBXH`;
+                            sql = `select * from MRM_USERBIG_BEAN where ZXBLX!="2" AND CBBZ = '1' AND BYXZT = ${userState} and userName='${loginname}' ORDER BY CBXH`;
                             break;
                     }
                 } else if (this.FromPage == 1) { //漏抄点击进入
                     if (api.pageParam.chCode == "") {
-                        sql = 'SELECT * FROM MRM_USER_BEAN WHERE YHBH!=" " and ZXBLX!="2" and CBBZ="0" and userName="' + loginname + '" ORDER BY CBCH,CBXH';
+                        sql = 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH!=" " and ZXBLX!="2" and CBBZ="0" and userName="' + loginname + '" ORDER BY CBXH';
                     } else {
                         var louchaoCode = api.pageParam.chCode;
                         var codeList = louchaoCode.join(",");
-                        sql = `SELECT * FROM MRM_USER_BEAN WHERE CBCH IN (${codeList}) and ZXBLX!="2" AND CBBZ="0" and userName='${loginname}' ORDER BY CBCH,CBXH`;
+                        sql = `SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" AND CBBZ="0" and userName='${loginname}' ORDER BY CBXH`;
                     }
                 } else if (this.FromPage == "cbqueryUser") {
-                    sql = 'SELECT * FROM MRM_USER_BEAN WHERE CBCH="' + cbch + '" and ZXBLX!="2" and userName="' + loginname + '" ORDER BY CBXH'
+                    sql = 'SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" and userName="' + loginname + '" ORDER BY CBXH'
                 }
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
@@ -527,7 +490,7 @@ function fnIntVue() {
             setXuChaoUser() { //设置当前抄表册续抄用户
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_BOOKS_BEAN SET XCYH="' + this.YHBH + '" WHERE CBCH="' + this.cbch + '" and userName="' + this.LoginName + '"'
+                    sql: 'UPDATE MRM_BOOKSBIG_BEAN SET XCYH="' + this.YHBH + '" WHERE userName="' + this.LoginName + '"'
                 });
             },
             getMemorandum() { //获取备忘录
@@ -560,8 +523,8 @@ function fnIntVue() {
             },
             openDetails() { //用户信息区域向左滑动打开用户详情页
                 api.openWin({
-                    name: 'MeterReading_information2',
-                    url: './MeterReading_information2.html',
+                    name: 'MeterReading_information',
+                    url: './MeterReading_information.html',
                     pageParam: this.UserDetails
                 });
             },
@@ -691,14 +654,44 @@ function fnIntVue() {
                 _this = this;
                 gpsmodel.gpsstate(function(ret) {
                     if (ret.gps == true) {
-                        //标志是表位图片还是抄表图片
-                        var state = 0;
+                        var state = 0; //标志是表位图片还是抄表图片
                         _this.getCamera("", "", state);
+                        // if ((_this.ImgData.length > 0 && !_this.hasMeterLocationImg) || (_this.ImgData.length > 1 && _this.hasMeterLocationImg)) {
+                        //     var typeNames = _this.ImgType.map(function(item) {
+                        //         return item.NAME;
+                        //     })
+                        //     api.actionSheet({
+                        //         buttons: typeNames
+                        //     }, function(ret, err) {
+                        //         var index = ret.buttonIndex;
+                        //         if (index <= _this.ImgType.length) {
+                        //             var id = _this.ImgType[index - 1].ID;
+                        //             var name = _this.ImgType[index - 1].NAME;
+                        //             alert("a");
+                        //             _this.getCamera(id, name, state);
+                        //         }
+                        //     });
+                        // } else {
+                        //     var itemIndex = _this.ImgType.findIndex(function(item) {
+                        //         return item.NAME == "表盘";
+                        //     });
+                        //     if (itemIndex != -1) {
+                        //         var id = _this.ImgType[itemIndex].ID;
+                        //         var name = _this.ImgType[itemIndex].NAME;
+                        //         alert("b");
+                        //         _this.getCamera(id, name, state);
+                        //     } else {
+                        //       alert("c");
+                        //         _this.getCamera("", "", state);
+                        //     }
+                        // }
                     } else {
-                        api.alert({
-                            title: '提示',
-                            msg: '无法进行拍照操作,请先打开gps',
-                        });
+                        vant.Dialog.alert({
+                            title: "提示",
+                            message: "无法进行拍照操作,请先打开gps"
+                        }).then(() => {
+
+                        })
                     }
                 });
             },
@@ -803,10 +796,9 @@ function fnIntVue() {
                     if (!existData.status || existData.data.length == 0) {
                         var photodata = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'INSERT INTO MRM_PHOTOS_BEAN(userName,ID,CBCH,YHBH,ZPMC,ZPLJ,ZPLX,ZPLXMC,SFSC,JD,WD,CBRQ,' +
+                            sql: 'INSERT INTO MRM_PHOTOS_BEAN(userName,ID,YHBH,ZPMC,ZPLJ,ZPLX,ZPLXMC,SFSC,JD,WD,CBRQ,' +
                                 'NotLoction) VALUES ("' + this.LoginName + '",' +
                                 '"' + $api.getStorage('cbOperatorId') + '",' +
-                                '"' + photoData.cbch + '",' +
                                 '"' + photoData.yhbh + '",' +
                                 '"' + photoData.zpmc + '",' +
                                 '"' + photoData.zplj + '",' +
@@ -836,7 +828,6 @@ function fnIntVue() {
                                     path: item.ZPLJ,
                                     isAppend: false,
                                     data: {
-                                        cbch: item.CBCH,
                                         yhbh: item.YHBH,
                                         zpmc: item.ZPMC,
                                         zplj: item.ZPLJ,
@@ -1159,58 +1150,24 @@ function fnIntVue() {
                 }
             },
             applyWorkOrder() { // 发起异常记录
-                _this = this;
-                api.openWin({
-                    name: 'workOrder',
-                    url: '../workOrder/workOrder_JL.html',
-                    pageParam: {
-                        YHBH: _this.UserDetails.YHBH,
-                        WinName: 'MeterReading_userList'
-                    }
+                var telponeNumer = this.UserDetails.YDDH;
+                if (telponeNumer == "") {
+                    api.toast({
+                        msg: '该用户没有录入联系方式',
+                        duration: 2000,
+                        location: 'top'
+                    });
+                    return;
+                }
+                api.call({
+                    type: 'tel_prompt',
+                    number: telponeNumer
                 });
-                // gpsmodel.gpsstate(function(ret) {
-                //     if (ret.gps == true) {
-                //         var workorderdata = db.selectSqlSync({
-                //             name: 'CBtest',
-                //             sql: 'select * from MRM_WORKORDER_BEAN where YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
-                //         });
-                //         //alert('9select * from MRM_WORKORDER_BEAN where YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"');
-                //         if (workorderdata.data) {
-                //             if (workorderdata.data.length > 0) {
-                //                 api.openWin({
-                //                     name: 'workOrder',
-                //                     url: '../workOrder/workOrder.html',
-                //                     pageParam: {
-                //                         YHBH: _this.UserDetails.YHBH,
-                //                         WinName: 'MeterReading_userList'
-                //                     }
-                //                 });
-                //             } else {
-                //                 api.openWin({
-                //                     name: 'workOrder',
-                //                     url: '../workOrder/workOrder.html',
-                //                     pageParam: {
-                //                         YHBH: _this.UserDetails.YHBH,
-                //                         WinName: 'MeterReading_userList'
-                //                     }
-                //                 });
-                //             }
-                //         }
-                //     } else {
-                //         vant.Dialog.alert({
-                //             title: "提示",
-                //             message: "无法发起工单,请先打开gps"
-                //         }).then(() => {
-                //
-                //         })
-                //     }
-                // });
             },
             contactsPhone() { //点击键盘上的更多
                 // 电话拨打和短信
                 var telponeNumer = this.UserDetails.YDDH;
                 var userCode = this.UserDetails.YHBH;
-                var userCh = this.UserDetails.CBCH;
                 var loginname = this.LoginName;
                 _this = this;
                 api.actionSheet({
@@ -1218,7 +1175,7 @@ function fnIntVue() {
                         fontNormalColor: '#FF5A5A5A',
                         fontPressColor: '#FF2F81F6'
                     },
-                    buttons: ['联系用户', '更新表位', '修改已抄', '导航', '查看上月图片']
+                    buttons: ['联系用户', '更新表位', '修改已抄', '导航']
                 }, function(ret, err) {
                     if (ret) {
                         var index = ret.buttonIndex;
@@ -1276,19 +1233,11 @@ function fnIntVue() {
                             });
                         }
                         if (index == 4) {
-                            //打开备忘录
-                            api.openWin({
-                                name: 'MeterReading_Note',
-                                url: './MeterReading_Note.html',
-                                pageParam: _this.UserDetails
-                            });
-                        }
-                        if (index == 5) {
                             gpsmodel.gpsstate(function(ret) {
                                 if (ret.gps == true) {
                                     api.openWin({
-                                        name: 'baiduMap',
-                                        url: '../baiduMap/baiduMap.html',
+                                        name: 'baiduMapBig',
+                                        url: '../baiduMap/baiduMapBig.html',
                                         pageParam: {
                                             YHBH: _this.UserDetails.YHBH
                                         }
@@ -1302,9 +1251,6 @@ function fnIntVue() {
                                     })
                                 }
                             });
-                        }
-                        if (index == 6) {
-                            _this.viewLastMonthPhoto();
                         }
                     }
                 });
@@ -1322,33 +1268,25 @@ function fnIntVue() {
                 });
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_USER_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE YHBH="' + yhbh + '" and userName="' + this.LoginName + '"'
+                    sql: 'UPDATE MRM_USERBIG_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE YHBH="' + yhbh + '" and userName="' + this.LoginName + '"'
                 });
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_USER_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE ZXBZBBH="' + yhbh + '" and ZXBLX="2" and userName="' + this.LoginName + '"'
+                    sql: 'UPDATE MRM_USERBIG_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE ZXBZBBH="' + yhbh + '" and ZXBLX="2" and userName="' + this.LoginName + '"'
                 });
                 var retUser = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
                 });
                 var retUsers = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and ZXBLX!="2" and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" and userName="' + this.LoginName + '"'
                 });
 
                 var wcusers = retUsers.data.length - retUser.data.length
                 var retBooks = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_BOOKS_BEAN SET YC=\'' + retUser.data.length + '\' , WC=\'' + wcusers + '\' WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and userName="' + this.LoginName + '"'
-                });
-                api.sendEvent({
-                    name: 'gxMeterRing',
-                    extra: {
-                        yc: retUser.data.length,
-                        wc: wcusers,
-                        cbch: this.UserDetails.CBCH
-                    }
+                    sql: 'UPDATE MRM_BOOKSBIG_BEAN SET YC=\'' + retUser.data.length + '\' , WC=\'' + wcusers + '\' WHERE userName="' + this.LoginName + '"'
                 });
                 this.UserDetails.ZD = "0";
                 this.UserDetails.YL = "0";
@@ -1380,7 +1318,7 @@ function fnIntVue() {
                         var jwd = lon + ',' + lat
                         var retdb = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'UPDATE MRM_USER_BEAN SET JWD="' + jwd + '" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
+                            sql: 'UPDATE MRM_USERBIG_BEAN SET JWD="' + jwd + '" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
                         });
                         _this.LoadOrNot = 1
                         api.showProgress({
@@ -1401,7 +1339,7 @@ function fnIntVue() {
                                     _this.UserDetails.DWSFSC = "1";
                                     var retdb = db.executeSqlSync({
                                         name: 'CBtest',
-                                        sql: 'UPDATE MRM_USER_BEAN SET DWSFSC="1" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
+                                        sql: 'UPDATE MRM_USERBIG_BEAN SET DWSFSC="1" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
                                     });
                                 } else {
                                     vant.Toast(ret.Message)
@@ -1415,7 +1353,7 @@ function fnIntVue() {
                                     if (ret.status) {
                                         db.executeSql({
                                             name: 'CBtest',
-                                            sql: 'UPDATE MRM_METER_LOCATION_BEAN SET ID=\'' + $api.getStorage("cbOperatorId") + '\',CBCH=\'' + userCh + '\',YHBH=\'' + _this.UserDetails.YHBH + '\',JD=\'' +
+                                            sql: 'UPDATE MRM_METER_LOCATION_BEAN SET ID=\'' + $api.getStorage("cbOperatorId") + '\',YHBH=\'' + _this.UserDetails.YHBH + '\',JD=\'' +
                                                 lon + '\',WD=\'' +
                                                 lat + '\',CBSJ=\'' + dataTime() + '\' WHERE YHBH= "' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
                                         }, function(ret, err) {
@@ -1426,11 +1364,12 @@ function fnIntVue() {
                                     } else {
                                         db.executeSql({
                                             name: 'CBtest',
-                                            sql: 'INSERT INTO MRM_METER_LOCATION_BEAN(userName,ID,CBCH,YHBH,JD,WD,SFGX,CBSJ) VALUES ("' + _this.LoginName + '","' + $api.getStorage("cbOperatorId") + '","' + userCh + '",' +
-                                                '"' + _this.UserDetails.YHBH + '",' +
-                                                '"' + lon + '",' +
-                                                '"' + lat + '",' +
-                                                '"' + dataTime() + '")'
+                                            sql: 'INSERT INTO MRM_METER_LOCATION_BEAN(userName,ID,YHBH,JD,WD,CBSJ) VALUES ("' + _this.LoginName +
+                                                '","' + $api.getStorage("cbOperatorId") +
+                                                '","' + _this.UserDetails.YHBH +
+                                                '","' + lon +
+                                                '","' + lat +
+                                                '","' + dataTime() + '")'
                                         }, function(ret, err) {
                                             if (ret.status) {
                                                 vant.Toast("网络错误，已存储本地")
@@ -1455,7 +1394,6 @@ function fnIntVue() {
                 //获取当前用户信息
                 var telponeNumer = this.UserDetails.YHDH;
                 var userCode = this.UserDetails.YHBH;
-                var userCh = this.UserDetails.CBCH;
                 _this = this;
                 var Records = [{
                     "JD": lon,
@@ -1730,13 +1668,96 @@ function fnIntVue() {
 
                 //判断是否是换表
                 if (this.CLFS == 3) { //换表
+                    // var turnOverTheTable = false; //是否是翻表
+                    // var WeekTableChange = true; //是否是周检换表状态
+                    // var lastIsEstimateCopy = false; //上次是否是估抄
+                    // var waterZD = 0;
+                    // var waterQD = 0;
+                    // var oldWaterQD = 0;
+                    // var oldDismantleZD = 0;
+                    // changeTable = true;
+
+                    // if (this.SLLRFS == 1) { //正常
+                    //     waterZD = (this.ZD == "" ? 0 : this.ZD);
+                    //     waterQD = this.UserDetails.QD;
+                    //     oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                    //     oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    // } else if (this.SLLRFS == 2) { //估抄
+                    //     WeekTableChange = false;
+                    //     if (sccbrq != "") {
+                    //         var cycleOptions = {
+                    //             estimateCopyType: 0, //估算类型
+                    //             avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                    //             lastMeterReadingTime: sccbrq, //上一次抄表日期
+                    //             dangqianriqi: this.HBRQ, //当前抄表日期
+                    //             weekSums: day, //周期总天数
+                    //             estimateCopyFirst: { //第一次估抄后抄表参数
+                    //                 changeTable: changeTable, //是否换表,
+                    //                 changeTableTime: this.HBRQ, //换表日期
+                    //                 waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                    //                 estimateCopyZD: this.UserDetails.QD, //估水止度
+                    //                 currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                    //             }
+                    //         }
+                    //         this.JBYL = estimateCopyCounts(cycleOptions);
+                    //         this.ZD = parseInt(this.UserDetails.QD) + parseInt(this.JBYL);
+                    //         // oldWaterQD = this.UserDetails.QD;
+                    //         // oldDismantleZD = (this.ZD == "" ? 0 : this.ZD);
+                    //         oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    //         oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                    //         waterQD = this.UserDetails.QD;
+                    //         waterZD = (this.ZD == "" ? 0 : this.ZD);
+                    //     } else {
+                    //         // oldWaterQD = this.UserDetails.QD;
+                    //         // oldDismantleZD = 0;
+                    //         oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    //         oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                    //         waterQD = 0;
+                    //         waterZD = 0;
+                    //     }
+                    //     // waterZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    //     // waterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                    // } else if (this.SLLRFS == 3) { //翻表
+                    //     turnOverTheTable = true;
+                    //     oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    //     oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                    //
+                    //     waterQD = this.UserDetails.QD;
+                    //     waterZD = (this.ZD == "" ? 0 : this.ZD);
+                    // }
+                    // //alert("旧表起度：" + waterQD + "旧表止度" + waterZD + "新表起度：" + oldWaterQD + "新表止度" + oldDismantleZD);
+                    // if (this.UserDetails.SCLRFS == 2) { //上次是估抄
+                    //     lastIsEstimateCopy = true;
+                    // }
+                    //
+                    // var normalOptions = {
+                    //     turnOverTheTable: turnOverTheTable, //是否是翻表 true 表示是 false表示不是 可以不传
+                    //     waterZD: waterZD, //旧表止度
+                    //     waterQD: waterQD, //旧表起度
+                    //     weekSums: day, //周期总天数
+                    //     WeekTableChange: WeekTableChange, //是否是周检换表状态
+                    //     oldDismantleZD: oldDismantleZD, //新表止度，周检旧表拆表止度 ,(周检状态需要传值)
+                    //     oldWaterQD: oldWaterQD, //新表起度，旧表上周期查表止度,(周检状态需要传值)
+                    //     weekWaterMeterMaxN: this.UserDetails.QD, //周检旧表水表最大技术值
+                    //     lastIsEstimateCopy: lastIsEstimateCopy, //上次是否是估抄 (周期换表状态需要)
+                    //     lastMeterReadingTime: sccbrq, //上一次抄表日期
+                    //     avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                    //     estimateCopyFirst: { //第一次估抄后抄表参数
+                    //         changeTable: changeTable, //是否换表,
+                    //         changeTableTime: this.HBRQ, //换表日期
+                    //         waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                    //         estimateCopyZD: this.UserDetails.QD, //估水止度
+                    //         currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                    //     }
+                    // }
+                    // alert(JSON.stringify(normalOptions));
+                    // result = normalVolumeCounts(normalOptions);
+                    // alert(result);
+
                     var waterSFSZJHB = true;
                     var waterSFSFB = false;
                     var waterSCCBRQ = sccbrq;
-                    var newyear = Time("year"); //获取系统的年；
-                    var newmonth = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
-                    var newday = Time("day"); //获取系统日
-                    var waterBCCBRQ = newyear + '-' + newmonth + '-' + newday;
+                    var waterBCCBRQ = new Date();
                     var waterHBRQ = this.HBRQ;
                     var waterQD = "";
                     var waterZD = "";
@@ -1750,6 +1771,26 @@ function fnIntVue() {
                     } else if (this.SLLRFS == 2) { //估抄
                         waterSFSZJHB = false;
                         if (sccbrq != "") {
+                            // var cycleOptions = {
+                            //     estimateCopyType: 0, //估算类型
+                            //     avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                            //     lastMeterReadingTime: sccbrq, //上一次抄表日期
+                            //     dangqianriqi: this.HBRQ, //当前抄表日期
+                            //     weekSums: day, //周期总天数
+                            //     estimateCopyFirst: { //第一次估抄后抄表参数
+                            //         changeTable: changeTable, //是否换表,
+                            //         changeTableTime: this.HBRQ, //换表日期
+                            //         waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                            //         estimateCopyZD: this.UserDetails.QD, //估水止度
+                            //         currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                            //     }
+                            // }
+                            //
+                            // this.JBYL = estimateCopyCounts(cycleOptions);
+                            // this.ZD = parseInt(this.UserDetails.QD) + parseInt(this.JBYL);
+                            // oldWaterQD = this.UserDetails.QD;
+                            // oldDismantleZD = (this.ZD == "" ? 0 : this.ZD);
+
                             var estimatedOptions = {
                                 waterQD: this.UserDetails.QD, //起度
                                 waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
@@ -1805,17 +1846,48 @@ function fnIntVue() {
                         }
                         result = normalAlgorithm(normalOptions);
                     } else if (this.SLLRFS == 2) { //估抄
-                        var newyear = Time("year"); //获取系统的年；
-                        var newmonth = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
-                        var newday = Time("day"); //获取系统日
-                        var waterBCCBRQ = newyear + '-' + newmonth + '-' + newday;
+                        //判断上次抄表是否是估抄
+                        // if (this.UserDetails.SCLRFS == 2) { //上次抄表是估抄
+                        //     var cycleOptions = {
+                        //         estimateCopyType: 0, //估算类型
+                        //         avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                        //         lastMeterReadingTime: sccbrq, //上一次抄表日期
+                        //         weekSums: day, //周期总天数
+                        //         estimateCopyFirst: { //第一次估抄后抄表参数
+                        //             changeTable: changeTable, //是否换表,
+                        //             changeTableTime: this.HBRQ, //换表日期
+                        //             waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                        //             estimateCopyZD: this.UserDetails.QD, //估水止度
+                        //             currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                        //         }
+                        //     }
+                        // } else { //上次抄表不是估抄
+                        //     var cycleOptions = {
+                        //         estimateCopyType: 0, //估算类型
+                        //         avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                        //         lastMeterReadingTime: sccbrq, //上一次抄表日期
+                        //         weekSums: day, //周期总天数
+                        //         estimateCopyFirst: { //第一次估抄后抄表参数
+                        //             changeTable: changeTable, //是否换表,
+                        //             changeTableTime: this.HBRQ, //换表日期
+                        //             waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                        //             estimateCopyZD: this.UserDetails.QD, //估水止度
+                        //             currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                        //         }
+                        //     }
+                        // }
+                        //alert(JSON.stringify(cycleOptions));
+                        //result = estimateCopyCounts(cycleOptions);
+                        //alert(parseInt(this.UserDetails.QD));
+                        //alert(parseInt(result));
+
                         var estimatedOptions = {
                             waterQD: this.UserDetails.QD, //起度
                             waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
                             waterZSL: zsl, //周期总水量
                             waterZTS: day, //周期总天数
                             waterSCCBRQ: sccbrq, //上次抄表日期
-                            waterBCCBRQ: waterBCCBRQ //本次抄表日期
+                            waterBCCBRQ: new Date() //本次抄表日期
                         }
                         result = estimatedAlgorithm(estimatedOptions);
                         this.ZD = parseInt(this.UserDetails.QD) + parseInt(result);
@@ -1853,19 +1925,19 @@ function fnIntVue() {
 
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'select * from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '"'
+                    sql: 'select * from MRM_USERBIG_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '"'
                 });
                 if (ret.status) {
                     if (ret.data.length > 0) { //当前用户是总表
                         var ret = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="0"'
+                            sql: 'select * from MRM_USERBIG_BEAN where ZBBH in (select YHBH from MRM_USERBIG_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="0"'
                         });
                         if (ret.status) {
                             if (ret.data.length < 1) { //当前用户是总表,且子表已经抄完
                                 var ret = db.selectSqlSync({
                                     name: 'CBtest',
-                                    sql: 'select YHBH,YL from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="1"'
+                                    sql: 'select YHBH,YL from MRM_USERBIG_BEAN where ZBBH in (select YHBH from MRM_USERBIG_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="1"'
                                 });
                                 if (ret.status) {
                                     if (ret.data.length > 0) {
@@ -1886,7 +1958,7 @@ function fnIntVue() {
                         //查询当前总表对应的虚表
                         var retUser = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
+                            sql: 'select * from MRM_USERBIG_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
                         });
                         //alert(JSON.stringify(retUser));
                         var zsl = Number(this.SJSL);
@@ -1895,17 +1967,13 @@ function fnIntVue() {
                             var sl = 0;
                             if (i == retUser.data.length - 1) {
                                 sl = zsl - sysl;
-                                //alert("最后剩余水量：" + sl);
                             } else {
                                 if (this.QZFS == "0") { //向下取整
                                     sl = Math.floor(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "向下取整：" + sl);
                                 } else if (this.QZFS == "1") { //四舍五入
                                     sl = Math.round(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "四舍五入：" + sl);
                                 } else if (this.QZFS == "2") { //向上取整
                                     sl = Math.ceil(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "向上取整：" + sl);
                                 }
                                 sysl = sysl + sl;
                             }
@@ -1954,7 +2022,7 @@ function fnIntVue() {
                                 qsysf = ret.data[i].QSYSF; //起始运算符
                                 jskj = ret.data[i].JSKJ; //结束口径
                                 jsysf = ret.data[i].JSYSF; //结束运算符
-                                var sql = 'select * from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and ' + qskj + qsysf + '(KJ+0) and (KJ+0)' + jsysf + jskj + ' and userName="' + this.LoginName + '"';
+                                var sql = 'select * from MRM_USERBIG_BEAN where YHBH="' + this.UserDetails.YHBH + '" and ' + qskj + qsysf + '(KJ+0) and (KJ+0)' + jsysf + jskj + ' and userName="' + this.LoginName + '"';
                                 var userdata = db.selectSqlSync({
                                     name: 'CBtest',
                                     sql: sql
@@ -2009,7 +2077,7 @@ function fnIntVue() {
                     if (this.UserDetails.ZXBJSFS == "2") { //按比例计算
                         var retUser = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
+                            sql: 'select * from MRM_USERBIG_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
                         });
                         var zblz = 0;
                         for (var i = 0; i < retUser.data.length; i++) {
@@ -2027,7 +2095,7 @@ function fnIntVue() {
                     }
                 }
 
-                var sql = 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表") and userName="' + this.LoginName + '" and CBBZ="0"';
+                var sql = 'select * from MRM_USERBIG_BEAN where ZBBH in (select YHBH from MRM_USERBIG_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表") and userName="' + this.LoginName + '" and CBBZ="0"';
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -2083,7 +2151,6 @@ function fnIntVue() {
                     objdata = {};
                     onlinestatus = ''
                     yhbh = this.UserDetails.YHBH;
-                    cbch = this.cbch;
                     var yl = parseInt(this.YL);
                     var qd = this.UserDetails.QD;
                     var zd = this.ZD;
@@ -2162,24 +2229,22 @@ function fnIntVue() {
                         return;
                     }
 
-                    var imgs = $(".imgDiv").length;
-                    if (this.ImgData.length == 0 && imgs < 1) {
-                        if (this.resultType != "正常" && this.resultType != "") {
-                            //alert("水量异常：" + this.resultType + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-水量异常-直接打开相机
-                            return;
-                        } else if (this.SBYXZT != "正常" && this.SBYXZT != "" && this.SBYXZT != " ") {
-                            //alert("水表状态非正常拍照。" + this.SBYXZT + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-非正常水表状态-直接打开相机
-                            return;
-                        } else if (this.UserDetails.SFQZPZ == "1") {
-                            //alert("用户强制拍照。" + this.UserDetails.SFQZPZ + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-满足强制拍照-直接打开相机
-                            return;
-                        }
+                    if (this.resultType != "正常" && this.resultType != "" && this.ImgData.length < 1) {
+                        this.preventRepeatTouch = false;
+                        this.photograph(); //保存时-满足强制拍照-直接打开相机
+                        return;
+                    }
+
+                    if (this.SBYXZT != "正常" && this.SBYXZT != "" && this.SBYXZT != " " && this.ImgData.length < 1) {
+                        this.preventRepeatTouch = false;
+                        this.photograph(); //保存时-满足强制拍照-直接打开相机
+                        return;
+                    }
+
+                    if (this.UserDetails.SFQZPZ == "1" && this.ImgData.length < 1) {
+                        this.preventRepeatTouch = false;
+                        this.photograph(); //保存时-满足强制拍照-直接打开相机
+                        return;
                     }
 
                     if (this.resultType != "正常" && this.resultType != "") {
@@ -2291,7 +2356,7 @@ function fnIntVue() {
                 _this = this;
                 var retUser = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' and userName="' + this.LoginName + '"'
                 });
                 var jwd = retUser.data[0].JWD;
                 var JWDData = jwd.split(",");
@@ -2335,7 +2400,7 @@ function fnIntVue() {
                         _this.UserDetails.DWSFSC = "1";
                         var retdb = db.executeSqlSync({
                             name: 'CBtest',
-                            sql: 'UPDATE MRM_USER_BEAN SET DWSFSC="1" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
+                            sql: 'UPDATE MRM_USERBIG_BEAN SET DWSFSC="1" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
                         });
                     }
                 });
@@ -2347,7 +2412,7 @@ function fnIntVue() {
                         //查询当前总表对应的虚表
                         var retUser = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
+                            sql: 'select * from MRM_USERBIG_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
                         });
                         //alert(JSON.stringify(retUser));
                         var zsl = Number(this.SJSL);
@@ -2376,7 +2441,7 @@ function fnIntVue() {
                                 var zd = parseInt(retUser.data[i].QD) + sl;
                                 var sllrfs = this.SLLRFS;
                                 var sbyxzt = this.SBYXZT == "" ? "正常" : this.SBYXZT;
-                                var sql = 'UPDATE MRM_USER_BEAN SET SLLRFS="' + sllrfs +
+                                var sql = 'UPDATE MRM_USERBIG_BEAN SET SLLRFS="' + sllrfs +
                                     '",ZD="' + zd +
                                     '",YL="' + sl +
                                     '",SJSL="' + sl +
@@ -2408,7 +2473,7 @@ function fnIntVue() {
                 var ylzt = this.resultType;
                 var sllrfs = this.SLLRFS;
                 var sjsl = this.SJSL;
-                var sql = 'UPDATE MRM_USER_BEAN SET SLLRFS="' + sllrfs + '", YLZT="' + ylzt + '", CLFS="' + clfs + '", ZD="' + zd + '",SFGC="' + sfgc + '",YL="' + yl + '",SJSL="' + sjsl + '",CBRQ="' + dataTime() + '",CBBZ="1",BYXZT="' + byxzt + '",CBYSZJD="' + lon + '",CBYSZWD="' + lat + '",SBYXZT="' +
+                var sql = 'UPDATE MRM_USERBIG_BEAN SET SLLRFS="' + sllrfs + '", YLZT="' + ylzt + '", CLFS="' + clfs + '", ZD="' + zd + '",SFGC="' + sfgc + '",YL="' + yl + '",SJSL="' + sjsl + '",CBRQ="' + dataTime() + '",CBBZ="1",BYXZT="' + byxzt + '",CBYSZJD="' + lon + '",CBYSZWD="' + lat + '",SBYXZT="' +
                     sbyxzt + '",SJBM="' + sjbm + '",XBBH = "' + xbbh + '",ZHHBRQ = "' + hbrq + '",XBQD = "' + xbqd + '",XBZD = "' + xbzd + '",SLZT = "' + slzt + '",PATH = "' + path + '" WHERE YHBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"';
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
@@ -2419,25 +2484,17 @@ function fnIntVue() {
                     // 保存成功修改抄表本已抄和未抄
                     var retUser = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
+                        sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
                     });
                     var retUsers = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and ZXBLX!="2" and userName="' + this.LoginName + '"'
+                        sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE ZXBLX!="2" and userName="' + this.LoginName + '"'
                     });
 
                     var wcusers = retUsers.data.length - retUser.data.length
                     var retBooks = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'UPDATE MRM_BOOKS_BEAN SET YC=\'' + retUser.data.length + '\' , WC=\'' + wcusers + '\' WHERE CBCH=\'' + this.cbch + '\' and userName="' + this.LoginName + '"'
-                    });
-                    api.sendEvent({
-                        name: 'gxMeterRing',
-                        extra: {
-                            yc: retUser.data.length,
-                            wc: wcusers,
-                            cbch: this.cbch
-                        }
+                        sql: 'UPDATE MRM_BOOKSBIG_BEAN SET YC=\'' + retUser.data.length + '\' , WC=\'' + wcusers + '\' WHERE userName="' + this.LoginName + '"'
                     });
                     this.UserDetails.ZD = this.ZD;
                     this.UserDetails.SFGC = sfgc;
@@ -2457,26 +2514,27 @@ function fnIntVue() {
                     this.insertPhotoIntoDB();
                     // vant.Toast("保存成功");
 
-                    var ret = db.selectSqlSync({
-                        name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_METERSTATE_BEAN WHERE BH="' + _this.BYXZT + '" and userName="' + _this.LoginName + '"'
-                    });
-                    if (ret.status) {
-                        if (ret.data.length > 0) {
-                            if (ret.data[0].GZYY != null && ret.data[0].GZYY != "null" && ret.data[0].GZYY != "") {
-                                var gzyy = ret.data[0].GZYY;
-                                this.Records = [];
-                                this.FileUrlArr = [];
-                                this.uploadWorkOrder(gzyy);
-                            } else {
-                                this.save();
-                            }
-                        } else {
-                            this.save();
-                        }
-                    } else {
-                        this.save();
-                    }
+                    this.save();
+                    // var ret = db.selectSqlSync({
+                    //     name: 'CBtest',
+                    //     sql: 'SELECT * FROM MRM_METERSTATE_BEAN WHERE BH="' + _this.BYXZT + '" and userName="' + _this.LoginName + '"'
+                    // });
+                    // if (ret.status) {
+                    //     if (ret.data.length > 0) {
+                    //         if (ret.data[0].GZYY != null && ret.data[0].GZYY != "null" && ret.data[0].GZYY != "") {
+                    //             var gzyy = ret.data[0].GZYY;
+                    //             this.Records = [];
+                    //             this.FileUrlArr = [];
+                    //             this.uploadWorkOrder(gzyy);
+                    //         } else {
+                    //             this.save();
+                    //         }
+                    //     } else {
+                    //         this.save();
+                    //     }
+                    // } else {
+                    //     this.save();
+                    // }
                 }
             },
             save() {
@@ -2557,11 +2615,11 @@ function fnIntVue() {
                 var statusOne = status;
                 var ret1 = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' AND CBBZ="1" and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' AND CBBZ="1" and userName="' + this.LoginName + '"'
                 });
                 var retbooks = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_BOOKS_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_BOOKSBIG_BEAN WHERE userName="' + this.LoginName + '"'
                 });
                 var UsersDatalisYHBH = this.UserDetails.YHBH;
                 var checkCode = retbooks.data[0].YZM;
@@ -2684,7 +2742,7 @@ function fnIntVue() {
                             if (ret.Status == 0 && ((resData.length > 0 && resData.IS_SCCG == "1") || resData.length == 0)) {
                                 var ret = db.executeSqlSync({
                                     name: 'CBtest',
-                                    sql: 'update MRM_USER_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + cUserDetails.YHBH + '" and userName="' + this.LoginName + '"'
+                                    sql: 'update MRM_USERBIG_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + cUserDetails.YHBH + '" and userName="' + this.LoginName + '"'
                                 });
                                 if (statusOne == 0) {
                                     _this.uploaderImg(false, true)
@@ -2724,7 +2782,7 @@ function fnIntVue() {
                                     for (var i = 0; i < resData.length; i++) {
                                         var ret = db.executeSqlSync({
                                             name: 'CBtest',
-                                            sql: 'update MRM_USER_BEAN set CWXX="' + resData[i].SCSB_MESSAGE + '" where YHBH="' + resData[i].YHBH + '" and userName="' + this.LoginName + '"'
+                                            sql: 'update MRM_USERBIG_BEAN set CWXX="' + resData[i].SCSB_MESSAGE + '" where YHBH="' + resData[i].YHBH + '" and userName="' + this.LoginName + '"'
                                         });
                                     }
                                 }
@@ -3215,7 +3273,7 @@ function fnIntVue() {
                             var QD = Number(_this.UserDetails.QD);
                             db.executeSql({
                                 name: 'CBtest',
-                                sql: 'UPDATE MRM_USER_BEAN SET QD="' + QD + '" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
+                                sql: 'UPDATE MRM_USERBIG_BEAN SET QD="' + QD + '" WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + _this.LoginName + '"'
                             });
                             if (_this.ZD != 0) {
                                 _this.getKeyboardNumbers(_this.ZD, true);

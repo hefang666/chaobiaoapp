@@ -177,22 +177,24 @@
             {{i+1}}
         </div>
         <div id="dv_right">
-            <div class="dv_1" onclick="openuser(this)" data-id="{{value.SBBH}}">
+            <div class="dv_1" onclick="openuser(this)" data-id="{{value.YHBH}}">
                 <div class="dv_1_dv1">{{value.YHMC}}</div>
-                {{if value.SFXG == 0}}
-                <div class="dv_2_dv2">未接收</div>
-                {{else}}
+                {{if value.SFSC == 1}}
+                <div class="dv_2_dv3">已上传</div>
+                {{else if value.SFXG == 1}}
                 <div class="dv_2_dv3">已接收</div>
+                {{else}}
+                <div class="dv_2_dv2">未接收</div>
                 {{/if}}
             </div>
-            <div class="dv_1" onclick="openuser(this)" data-id="{{value.SBBH}}">
+            <div class="dv_1" onclick="openuser(this)" data-id="{{value.YHBH}}">
                 <div class="dv_1_dv1">{{value.YHBH}}</div>
             </div>
             <div class="dv_1">
-                <div class="dv_1_dv1" onclick="openuser(this)" data-id="{{value.SBBH}}">{{value.YHDZ}}</div>
+                <div class="dv_1_dv1" onclick="openuser(this)" data-id="{{value.YHBH}}">{{value.YHDZ}}</div>
                 {{if value.SFSC == 0 && value.SFXG == 1}}
                 <div class="dv_4_dv2">
-                    <img src="../../image/MeteReading/tupian/shanchu.png" onclick="deletework(this)" data-id="{{value.SBBH}}" />
+                    <img src="../../image/MeteReading/tupian/shanchu.png" onclick="deletework(this)" data-id="{{value.YHBH}}" />
                 </div>
                 {{/if}}
             </div>
@@ -227,13 +229,13 @@
         var db = api.require('db');
         var bookdata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_WATER_METER_BOOK where BZBH="' + api.pageParam.BZBH + '" AND userName = "' + LoginName + '"'
+            sql: 'select * from MRM_WATER_METER_BOOK where BZBH="' + api.pageParam.BZBH + '" and SBYTID="' + api.pageParam.SBYTID + '" and userName = "' + LoginName + '"'
         });
         book = bookdata.data[0];
 
         var userdata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_WATER_METER_USER where BZBH="' + book.BZBH + '" AND userName = "' + LoginName + '" ORDER BY cast(CBXH as int)'
+            sql: 'select * from MRM_WATER_METER_USER where BZBH="' + book.BZBH + '" and SBYTID="' + book.SBYTID + '" and userName = "' + LoginName + '" ORDER BY cast(CBXH as int)'
         });
         if (userdata.status) {
             if (userdata.data.length == book.BBCYHZS) {
@@ -261,13 +263,13 @@
     }
 
     function openuser(el) {
-        var SBBH = $(el).attr('data-id');
+        var YHBH = $(el).attr('data-id');
 
         api.openWin({
             name: 'WaterMeterUser',
             url: './WaterMeterUser.html',
             pageParam: {
-                SBBH: SBBH
+                YHBH: YHBH
             }
         });
     }
@@ -280,11 +282,11 @@
         }, function(ret, err) {
             var index = ret.buttonIndex;
             if (index == 1) {
-                var SBBH = $(el).attr("data-id");
+                var YHBH = $(el).attr("data-id");
                 var db = api.require('db');
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'update MRM_WATER_METER_USER set SFXG="0" where SBBH="' + SBBH + '" and userName="' + LoginName + '"'
+                    sql: 'update MRM_WATER_METER_USER set SFXG="0", SFSC="0", CWXX=" " where YHBH="' + YHBH + '" and userName="' + LoginName + '"'
                 });
                 if (ret.status) {
                     queryUser();
@@ -298,7 +300,6 @@
             api.closeWin();
         },
         'CodeScanning': function() {
-            var userCode
             var FNScanner = api.require('FNScanner');
             FNScanner.open({
                 autorotation: true
@@ -308,27 +309,34 @@
                         SBBH = ret.content;
                         var userdata = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select * from MRM_WATER_METER_USER where SBBH="' + SBBH + '" and BZBH="' + book.BZBH + '" AND userName = "' + LoginName + '"'
+                            sql: 'select * from MRM_WATER_METER_USER where SBBH="' + SBBH + '" and BZBH="' + book.BZBH + '" and SBYTID="' + book.SBYTID + '" and userName = "' + LoginName + '"'
                         });
                         if (userdata.status) {
-                            if (userdata.data.length > 0) {
+                            if (userdata.data.length > 1) {
+                                api.toast({
+                                    msg: '数据异常，存在表号重复的数据',
+                                    duration: 2000,
+                                    location: 'bottom'
+                                });
+                            } else if (userdata.data.length == 1) {
                                 api.openWin({
                                     name: 'WaterMeterUser',
                                     url: './WaterMeterUser.html',
                                     pageParam: {
-                                        SBBH: SBBH
+                                        YHBH: userdata.data[0].YHBH
                                     }
                                 });
                             } else {
-                              api.toast({
-                                  msg: '当前报装编号下没有对应的水表接收数据',
-                                  duration: 2000,
-                                  location: 'bottom'
-                              });
+                                api.toast({
+                                    msg: '当前报装编号下没有对应的水表接收数据',
+                                    duration: 2000,
+                                    location: 'bottom'
+                                });
                             }
                         }
                     }
                 } else {
+                    console.log(JSON.stringify(err));
                 }
             });
         }

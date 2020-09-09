@@ -112,7 +112,7 @@
         var db = api.require('db');
         var userdata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_USER_BEAN where YHBH="' + yhbh + '" and userName="' + LoginName + '"'
+            sql: 'select * from MRM_USERBIG_BEAN where YHBH="' + yhbh + '" and userName="' + LoginName + '"'
         });
         if (userdata.status) {
             if (userdata.data.length > 0) {
@@ -125,7 +125,7 @@
         var db = api.require('db');
         var userdata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_USER_BEAN where userName="' + LoginName + '"'
+            sql: 'select * from MRM_USERBIG_BEAN where userName="' + LoginName + '"'
         });
         if (userdata.status) {
             if (userdata.data.length > 0) {
@@ -303,8 +303,8 @@
     var actionList = {
         'select': function() {
             api.openWin({
-                name: 'userQuery',
-                url: './userQuery.html',
+                name: 'userQueryBig',
+                url: './userQueryBig.html',
                 slidBackEnabled: false,
                 animation: {
                     type: "push",

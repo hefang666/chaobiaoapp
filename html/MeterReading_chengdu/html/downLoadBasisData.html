@@ -9,8 +9,20 @@
     <link rel="stylesheet" type="text/css" href="../../public/css/aui.css" />
     <link rel="stylesheet" type="text/css" href="../../public/css/aui1.css" />
     <link rel="stylesheet" type="text/css" href="../../public/css/dialog.css">
-    <link rel="stylesheet" type="text/css" href="../css/public.css">
     <style>
+        body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-flow: column;
+            background-color: #ffffff;
+        }
+
+        #header {
+            position: fixed;
+            top: 0;
+        }
+
         #center {
             flex: 1;
             overflow: scroll;
@@ -54,14 +66,12 @@
 </head>
 
 <body>
-    <div class="header-box">
-        <header class="aui-bar aui-bar-nav aui-border-b" id="header">
-            <div class="aui-pull-left aui-btn" tapmode onclick="fnReturnMyInfo();">
-                <span class="aui-iconfont aui-icon-left"></span>
-            </div>
-            <div class="aui-title">更新数据</div>
-        </header>
-    </div>
+    <header class="aui-bar aui-bar-nav aui-border-b" id="header">
+        <div class="aui-pull-left aui-btn" tapmode onclick="fnReturnMyInfo();">
+            <span class="aui-iconfont aui-icon-left"></span>
+        </div>
+        <div class="aui-title">更新数据</div>
+    </header>
     <div id="center">
         <div class="center_top">
 
@@ -91,6 +101,7 @@
         AREA = 0X076,
         ONLINE = 0X077,
         FLOATING = 0X078;
+        YSXZ = 0X079;
 
     var downlaodTag = 0; //下载标识,当前下载到哪一种
     var dtr = [];
@@ -311,7 +322,7 @@
                 if (!booksdata.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE "MRM_BOOKS_BEAN" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"CBCMC" TEXT,"BBCYHZS" TEXT,"DQCBXH" TEXT,"YZM" TEXT,"SFSC" TEXT,"SFTX" TEXT,"JHR" TEXT,"YCSM" TEXT,"YSC" TEXT,"YC" TEXT,"WC" TEXT,"YXZ" TEXT,"XZDD" TEXT,"CBBRZ" TEXT,"CBBDATA" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"GDSBS" INTEGER,"XCYH" TEXT)'
+                        sql: 'CREATE TABLE MRM_BOOKS_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"CBCMC" TEXT,"BBCYHZS" TEXT,"BBCYHZSALL" TEXT,"DQCBXH" TEXT,"YZM" TEXT,"SFSC" TEXT,"SFTX" TEXT,"JHR" TEXT,"YCSM" TEXT,"YSC" TEXT,"YC" TEXT,"WC" TEXT,"YXZ" TEXT,"XZDD" TEXT,"CBBRZ" TEXT,"CBBDATA" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"GDSBS" INTEGER,"XCYH" TEXT)'
                     });
                 }
 
@@ -396,6 +407,30 @@
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
                         sql: 'CREATE TABLE MRM_SHORT_MEESSAGE_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"MBMC" TEXT,"MBNR" TEXT,"MBSL" TEXT)'
+                    });
+                }
+
+                //创建用户性质浮动表
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_STATE_FLOATING'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_STATE_FLOATING("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"YSXZID" TEXT,"SFBL" TEXT,"XFBL" TEXT,"QSKJ" TEXT,"QSYSF" TEXT,"JSKJ" TEXT,"JSYSF" TEXT)'
+                    });
+                }
+
+                //创建用水性质表Water nature
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_WATER_NATURE'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_WATER_NATURE("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"NAME" TEXT,"YCZD1" TEXT,"YCZD2" TEXT)'
                     });
                 }
 
@@ -487,21 +522,24 @@
                                 name: 'CBtest',
                                 sql: 'select * from MRM_BOOKS_BEAN where CBCH="' + Booksdata[i].CBCH + '" and userName="' + LoginName + '"'
                             });
+                            console.log(JSON.stringify(bookdata));
                             var sql = "";
                             if (bookdata.data.length > 0) {
                                 sql = 'update MRM_BOOKS_BEAN set ' +
                                     'ID="' + Booksdata[i].ID + '" ' +
                                     'CBCMC="' + Booksdata[i].CBCMC + '" ' +
                                     'BBCYHZS="' + Booksdata[i].BBCYHZS + '" ' +
+                                    'BBCYHZSALL="' + Booksdata[i].BBCYHZSALL + '" ' +
                                     'DQCBXH="' + Booksdata[i].DQCBXH + '" ' +
                                     'YCSM="' + Booksdata[i].YCSM + '" ' +
                                     'JHR="' + Booksdata[i].JHR + '" ' +
                                     'where CBCH="' + Booksdata[i].CBCH + '" and userName="' + LoginName + '"';
                             } else {
-                                sql = 'INSERT INTO MRM_BOOKS_BEAN(userName, ID, CBCH, CBCMC, BBCYHZS, DQCBXH,YCSM,JHR,GDSBS,XCYH,YC,WC,YSC,CBNUMER) VALUES ("' + LoginName + '","' + Booksdata[i].ID + '",' +
+                                sql = 'INSERT INTO MRM_BOOKS_BEAN(userName, ID, CBCH, CBCMC, BBCYHZS, BBCYHZSALL, DQCBXH,YCSM,JHR,GDSBS,XCYH,YC,WC,YSC,CBNUMER) VALUES ("' + LoginName + '","' + Booksdata[i].ID + '",' +
                                     '"' + Booksdata[i].CBCH + '",' +
                                     '"' + Booksdata[i].CBCMC + '",' +
                                     '"' + Booksdata[i].BBCYHZS + '",' +
+                                    '"' + Booksdata[i].BBCYHZSALL + '",' +
                                     '"' + Booksdata[i].DQCBXH + '",' +
                                     '"' + Booksdata[i].YCSM + '",' +
                                     '"' + Booksdata[i].JHR + '",' +
@@ -557,6 +595,9 @@
         } else if (downlaodTag < FLOATING) {
             $('.center_top').append("下载浮动比例数据...</br>");
             beginDownLoadFloating();
+        } else if (downlaodTag < YSXZ) {
+            $('.center_top').append("下载用水性质...</br>");
+            beginDownLoadWaterNature();
         } else {
             downlaodTag = 0;
             $('#download').html("完成");
@@ -584,7 +625,9 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     deleteboods();
@@ -599,12 +642,13 @@
                             var data = db.executeSqlSync({
                                 name: 'CBtest',
                                 sql: "INSERT INTO MRM_BOOKS_BEAN " +
-                                    "(userName, ID, CBCH, CBCMC, BBCYHZS, DQCBXH, JHR, YCSM, SFSC, SFTX, YSC, YC, WC, YXZ, XZDD, GDSBS, XCYH, CBNUMER) VALUES " +
+                                    "(userName, ID, CBCH, CBCMC, BBCYHZS, BBCYHZSALL, DQCBXH, JHR, YCSM, SFSC, SFTX, YSC, YC, WC, YXZ, XZDD, GDSBS, XCYH, CBNUMER) VALUES " +
                                     "('" + LoginName +
                                     "', '" + Data[i].ID +
                                     "', '" + Data[i].CBCH +
                                     "', '" + Data[i].CBCMC +
                                     "', '" + Data[i].BBCYHZS +
+                                    "', '" + Data[i].BBCYHZSALL +
                                     "', '" + Data[i].DQCBXH +
                                     "', '" + Data[i].JHR +
                                     "', '" + Data[i].YCSM + "', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0')"
@@ -663,6 +707,7 @@
                     var Data = [];
                     if (ret.Data != "" && ret.Data != " ") {
                         Data = JSON.parse(ret.Data);
+                        console.log(JSON.stringify(Data));
                     }
                     //var Data = JSON.parse(ret.Data);
                     if (Data.length > 0) {
@@ -1002,7 +1047,6 @@
         }
         fnPost('', body, 'application/json', false, function(ret, err) {
             if (ret) {
-                var photoList = [];
                 if (ret.Status == 0) {
                     deletonline();
                     var Data = [];
@@ -1070,7 +1114,6 @@
         }
         fnPost('', body, 'application/json', false, function(ret, err) {
             if (ret) {
-                var photoList = [];
                 if (ret.Status == 0) {
                     deletfloating();
                     var Data = [];
@@ -1121,6 +1164,71 @@
         });
     }
 
+    function beginDownLoadWaterNature() {
+      var Parameter = {
+          "ClientId": api.deviceId,
+          "ClientName": api.deviceModel,
+          "OperatorId": $api.getStorage('cbOperatorId'),
+          "OperatorName": $api.getStorage('cbOperatorName'),
+          "Type": "161",
+          "Required": ""
+      };
+      var body = {
+          body: JSON.stringify({
+              "UserName": $api.getStorage('cbOperatorName'),
+              "Password": $api.getStorage('cbPassword'),
+              "SerialNo": dataTime(),
+              "Method": "R999",
+              "Parameter": JSON.stringify(Parameter)
+          })
+      }
+      fnPost('', body, 'application/json', false, function(ret, err) {
+          if (ret) {
+              if (ret.Status == 0) {
+                  deletwaternature();
+                  var Data = [];
+                  if (ret.Data != "" && ret.Data != " ") {
+                      Data = JSON.parse(ret.Data);
+                  }
+                  //var Data = JSON.parse(ret.Data);
+                  if (Data.length > 0) {
+                      var db = api.require('db');
+                      for (var i = 0; i < Data.length; i++) {
+                          var data = db.executeSqlSync({
+                              name: 'CBtest',
+                              sql: "INSERT INTO MRM_WATER_NATURE " +
+                                  "(userName, ID, NAME) VALUES " +
+                                  "('" + LoginName +
+                                  "', '" + Data[i].ID +
+                                  "', '" + Data[i].NAME + "')"
+                          });
+                      }
+                  } else {
+                      api.toast({
+                          msg: '无用水性质数据返回',
+                          duration: 3000,
+                          location: 'bottom'
+                      });
+                  }
+                  $('.center_top').append("下载用水性质成功</br>");
+                  downlaodTag = YSXZ;
+                  downlaodDatas();
+              } else {
+                  $('.center_top').append("下载用水性质失败</br>");
+                  api.toast({
+                      msg: ret.Message,
+                      duration: 3000,
+                      location: 'bottom'
+                  });
+              }
+          } else {
+              api.alert({
+                  msg: JSON.stringify(err)
+              });
+          }
+      });
+    }
+
     function deleteboods() {
         var db = api.require('db');
         var ret = db.executeSqlSync({
@@ -1167,31 +1275,18 @@
             name: 'CBtest',
             sql: 'delete from MRM_WATER_METER_PHOTOS where userName="' + LoginName + '"'
         });
-        var photo = db.selectSqlSync({
+        var ret = db.executeSqlSync({
             name: 'CBtest',
-            sql: 'SELECT * FROM MRM_PHOTOS_BEAN where userName="' + LoginName + '"'
+            sql: 'delete from MRM_PHOTOS_BEAN where userName="' + LoginName + '"'
         });
-        if (photo.status) {
-            if (photo.data.length > 0) {
-                var LJ = photo.data[0].ZPLJ;
-                var index = LJ.lastIndexOf('/');
-                LJ = LJ.substring(0, index);
-                var fs = api.require('fs');
-                fs.rmdir({
-                    path: LJ
-                }, function(ret, err) {
-                    if (ret.status) {
-                        var photos = db.executeSqlSync({
-                            name: 'CBtest',
-                            sql: 'delete from MRM_PHOTOS_BEAN where userName="' + LoginName + '"'
-                        });
-                    } else {
-                        //alert(JSON.stringify(err));
-                    }
-                });
-            }
-        }
-
+        var ret = db.executeSqlSync({
+            name: 'CBtest',
+            sql: 'delete from MRM_BOOKSBIG_BEAN where userName="' + LoginName + '"'
+        });
+        var ret = db.executeSqlSync({
+            name: 'CBtest',
+            sql: 'delete from MRM_USERBIG_BEAN where userName="' + LoginName + '"'
+        });
     }
 
     function deletestatus() {
@@ -1247,6 +1342,14 @@
         var user = db.executeSqlSync({
             name: 'CBtest',
             sql: 'delete from MRM_STATE_FLOATING where userName="' + LoginName + '"'
+        });
+    }
+
+    function deletwaternature() {
+        var db = api.require('db');
+        var user = db.executeSqlSync({
+            name: 'CBtest',
+            sql: 'delete from MRM_WATER_NATURE where userName="' + LoginName + '"'
         });
     }
 

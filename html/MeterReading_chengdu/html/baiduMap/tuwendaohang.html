@@ -303,6 +303,7 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         }
+        console.log(JSON.stringify(body));
         fnPost('', body, 'application/json', false, function(ret, err) {
             if (ret) {
                 var photoList = [];

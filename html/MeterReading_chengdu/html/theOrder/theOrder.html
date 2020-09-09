@@ -5,15 +5,23 @@
     <meta charset="utf-8">
     <meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
     <meta name="format-detection" content="telephone=no,email=no,date=no,address=no">
-    <title>title</title>
+    <title>抄表顺序</title>
     <link rel="stylesheet" type="text/css" href="../../../public/css/api.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/style.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/aui1.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/dialog.css" />
-    <link rel="stylesheet" type="text/css" href="../../css/public.css" />
     <style>
+        body {
+            height: 100%;
+            width: 100%;
+            flex-flow: column;
+            display: flex;
+            background-color: #ffffff;
+        }
 
         #header {
+            position: fixed;
+            top: 0;
             background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
         }
 
@@ -94,7 +102,6 @@
 </head>
 
 <body id="bd">
-  <div class="header-box">
     <header class="aui-bar aui-bar-nav" id="header">
         <div class="aui-pull-left aui-btn" data-action='back'>
             <span class="aui-iconfont aui-icon-left"></span>
@@ -104,7 +111,6 @@
             <span class="aui-iconfont">抄表册</span>
         </div>
     </header>
-  </div>
     <div id="top">
         <div id="dv_one" class="input border_color" onclick="one()">
             <input id="one" type="number" pattern="\d*" />
@@ -190,7 +196,7 @@
         bodyW = $api.offset(body).w;
 
         var pageParam = api.pageParam;
-        $('#top').css('padding-top', '' + headerH + 'px');
+        $('#top').css('margin-top', '' + headerH + 'px');
 
         var oInput = document.getElementById("one");
         oInput.focus();
@@ -222,7 +228,7 @@
 
                     var userdata = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'select * from MRM_USER_BEAN where userName="' + LoginName + '" and CBCH="' + bookList[index - 1].CBCH + '" ORDER BY CBXH ASC'
+                        sql: 'select * from MRM_USER_BEAN where userName="' + LoginName + '" and ZXBLX!="2" and CBCH="' + bookList[index - 1].CBCH + '" ORDER BY CBXH ASC'
                     });
                     if (userdata.status) {
                         userList = userdata.data;
@@ -232,6 +238,7 @@
                         }
 
                         var str = template('userList', datas);
+                        //console.log(JSON.stringify(str));
                         $('#center div').remove();
                         $('#center').append(str);
                         fnReadyOpenWin();
@@ -327,7 +334,7 @@
                 });
                 var userdata = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'select * from MRM_USER_BEAN where CBCH="' + book.CBCH + '" and userName="' + LoginName + '" ORDER BY CBXH ASC'
+                    sql: 'select * from MRM_USER_BEAN where CBCH="' + book.CBCH + '" and ZXBLX!="2" and userName="' + LoginName + '" ORDER BY CBXH ASC'
                 });
                 if (userdata.status) {
                     userList = userdata.data;
@@ -337,6 +344,7 @@
                     }
 
                     var str = template('userList', datas);
+                    //console.log(JSON.stringify(str));
                     $('#center div').remove();
                     $('#center').append(str);
                     fnReadyOpenWin();
@@ -350,11 +358,11 @@
     }
 
     function upload() {
-        if (book && book.SFTX == "1") {
+        if (book.SFTX == "1") {
             var db = api.require('db');
             var userdata = db.selectSqlSync({
                 name: 'CBtest',
-                sql: 'select * from MRM_USER_BEAN where CBCH="' + book.CBCH + '" and userName="' + LoginName + '" ORDER BY CBXH ASC'
+                sql: 'select * from MRM_USER_BEAN where CBCH="' + book.CBCH + '" and ZXBLX!="2" and userName="' + LoginName + '" ORDER BY CBXH ASC'
             });
             if (userdata.status) {
                 var records = [];

@@ -52,6 +52,7 @@ function fnGet(path, data, isDelete, callback, noHide, tag) {
                         });
                     }
                     if (err.body.error.message == '当前用户没有登录到系统！') {
+                        // console.log(111);
                         api.openWin({
                             name: 'login',
                             url: 'widget://html/login/login.html',
@@ -124,6 +125,7 @@ function fnGet1(path, data, isDelete, callback, noHide, tag) {
                         });
                     }
                     if (err.body.error.message == '当前用户没有登录到系统！') {
+                        // console.log(111);
                         api.openWin({
                             name: 'login',
                             url: 'widget://html/login/login.html',
@@ -168,13 +170,14 @@ function fnPost(path, data, contentType, isPut, callback) {
             data: data
         }
         //alert(JSON.stringify(options));
+        //console.log(JSON.stringify(options));
 
     api.ajax(options, function(ret, err) {
         api.refreshHeaderLoadDone();
         api.hideProgress();
         if (err) {
             api.toast({
-                msg: err.body.Message,
+                msg: err.msg,
                 duration: 2000,
                 location: 'top'
             });
@@ -195,6 +198,7 @@ function fnPost(path, data, contentType, isPut, callback) {
     //     if (ret.status) {
     //      apipath=ret.data[0].ServerIp;
     //
+    //      console.log('http://'+apipath+'/Api/'+path)
     //      app = {
     //          apipath:apipath,
     //      };
@@ -212,6 +216,7 @@ function fnPost(path, data, contentType, isPut, callback) {
     //          callback(ret, err);
     //      });
     //     } else {
+    //         console.log(JSON.stringify(err));
     //     }
     // });
 
@@ -236,6 +241,7 @@ function fnPostt(path, data, contentType, isPut, callback) {
             data: data
         }
         //alert(JSON.stringify(options));
+        //console.log(JSON.stringify(options));
 
     api.ajax(options, function(ret, err) {
         api.refreshHeaderLoadDone();
@@ -263,6 +269,7 @@ function fnPostt(path, data, contentType, isPut, callback) {
     //     if (ret.status) {
     //      apipath=ret.data[0].ServerIp;
     //
+    //      console.log('http://'+apipath+'/Api/'+path)
     //      app = {
     //          apipath:apipath,
     //      };
@@ -280,6 +287,7 @@ function fnPostt(path, data, contentType, isPut, callback) {
     //          callback(ret, err);
     //      });
     //     } else {
+    //         console.log(JSON.stringify(err));
     //     }
     // });
 
@@ -330,6 +338,7 @@ function fnPost3(path, data, contentType, isPut, callback) {
             data: data
         }
         //alert(JSON.stringify(options));
+        //console.log(JSON.stringify(options));
     api.ajax(options, function(ret, err) {
         api.refreshHeaderLoadDone();
         api.hideProgress();
@@ -350,8 +359,9 @@ function fnPost3(path, data, contentType, isPut, callback) {
     });
 };
 
-function fnPost4(Methods, data, contentType, isLogin, isPut, callback, files, isErr) {
+function fnPost4(Methods, data, contentType, isLogin, isPut, callback, files = {}, isErr = false) {
     var headers = {};
+    // console.log(JSON.stringify(files))
     var body = {
         body: JSON.stringify({
             Method: Methods,
@@ -361,7 +371,7 @@ function fnPost4(Methods, data, contentType, isLogin, isPut, callback, files, is
             KeyCode: '', //营业
             Parameter: JSON.stringify(data)
         }),
-        files: files || {}
+        files: files
     };
     if (contentType) {
         headers["Content-Type"] = contentType
@@ -386,6 +396,7 @@ function fnPost4(Methods, data, contentType, isLogin, isPut, callback, files, is
 
     // vue 测试
     // app.apipath = 'http://' + $api.getStorage('apiUrl')+'/api/'+path;
+    // console.log( app.apipath);
     api.ajax({
         url: $api.getStorage('cbapipath') + '/api/WaterMeters/Info', //app.apipath+path
         method: isPut ? 'put' : 'post',
@@ -418,6 +429,7 @@ function fnPost4(Methods, data, contentType, isLogin, isPut, callback, files, is
                         });
                     }
                     if (err.body.error.message == '当前用户没有登录到系统！') {
+                        // console.log(111);
                         setTimeout(function() {
                             api.closeToWin({
                                 name: 'login'

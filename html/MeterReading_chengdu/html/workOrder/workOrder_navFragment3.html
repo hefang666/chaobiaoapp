@@ -295,6 +295,7 @@
                 }
 
                 var str = template('photoList', datas);
+                //console.log(JSON.stringify(str));
                 $('#GDZP .img-item').remove();
                 $('#GDZP').append(str);
                 // $('#GDZP').append('<img src="../../image/MeteReading/tupian/zhaopian_daohang.png" onclick="openphoto(this)" data-id=0 class="photo"></img>');
@@ -735,6 +736,7 @@
                     "', '" + lon +
                     "', '" + lat +
                     "', '" + address + "')";
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -786,6 +788,7 @@
                     'JD="' + lon + '",' +
                     'WD="' + lat + '",' +
                     'DZ="' + address + '" where YHBH="' + userbean.YHBH + '"';
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -918,7 +921,7 @@
                             if (ret.data) {
                                 if (ret.data.length > 0) {
                                     uploadPhotoList = ret.data;
-                                    setTimeout(function() {
+                                    setTimeout(() => {
                                         uploadPhoto(0);
                                     }, 300);
                                 } else {

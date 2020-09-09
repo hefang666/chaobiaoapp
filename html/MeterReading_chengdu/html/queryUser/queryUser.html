@@ -71,7 +71,6 @@
         #query_dv2 {
             flex: 1;
             background-color: #fff;
-            height: 60px;
         }
 
         #query_dv3 {
@@ -195,10 +194,6 @@
             flex-direction: row;
         }
 
-        .dv_3_font {
-            font-size: 16px;
-        }
-
         .dv_3_dv1 {
             flex: 1;
             white-space: nowrap;
@@ -224,12 +219,8 @@
             margin-bottom: 10px;
         }
 
-        .dv_4_font {
-          font-size: 16px;
-        }
-
         .aui-searchbar-clear-btn {
-            top: 0.2rem;
+            top: 0.5rem;
             background: #fff;
         }
 
@@ -259,11 +250,11 @@
         </div>
 
         <div id="query_dv2">
-            <div class="aui-searchbar" id="search" style="background: #fff">
+            <div class="aui-searchbar" id="search" style="background-color: #fff;">
                 <div class="aui-searchbar-input aui-border-radius" tapmode style="background-color: #F3F3F3;margin: 0;height:40px;line-height:40px;">
                     <i class="aui-iconfont aui-icon-search"></i>
                     <form action="">
-                        <input type="search" autocomplete="off" style="height: 40px;" placeholder="请输入搜索内容" id="search-input">
+                        <input type="search" autocomplete="off" style="height: 2rem;" placeholder="请输入搜索内容" id="search-input">
                     </form>
                     <div class="aui-searchbar-clear-btn">
                         <i class="aui-iconfont aui-icon-close"></i>
@@ -438,7 +429,6 @@
                 $('#dv').html('');
                 var str = template('lishiList', datas);
                 $('#dv').append(str);
-
                 fnReadyOpenWin();
             }
         } else {
@@ -489,8 +479,7 @@
     }
 
     //查询用户信息
-    function queryUserOne(type, event) {
-        var that = event;
+    function queryUserOne(type, that = event) {
         if (type == 'h') {
             var CXCS = $(that).text();
             var CXLX = $(that).attr('CXLX');
@@ -531,7 +520,7 @@
         // 重复的查询不在加入表中
         db.selectSql({
             name: 'CBtest',
-            sql: 'SELECT * FROM MRM_HISTORYS_BEAN where LSLX="查询用户" and CXCS = ' + CXCS + ' and userName = ' + LoginName
+            sql: `SELECT * FROM MRM_HISTORYS_BEAN where LSLX="查询用户" and CXCS = "${CXCS}" and userName = "${LoginName}"`
         }, function(ret, err) {
             if (ret.status) {
                 if (ret.data.length == 0) {
@@ -546,16 +535,16 @@
             var sql = "";
             switch (true) {
                 case CXLX == 'YHBH' || CXLX == undefined:
-                    var sql = 'select * from MRM_USER_BEAN where YHBH = ' + CXCS + ' and userName = ' + LoginName;
+                    var sql = `select * from MRM_USER_BEAN where YHBH = "${CXCS}" and userName = "${LoginName}"`;
                     break;
                 case CXLX == 'KJ':
-                    var sql = 'select * from MRM_USER_BEAN where KJ = ' + CXCS + ' and userName = ' + LoginName;
+                    var sql = `select * from MRM_USER_BEAN where KJ = "${CXCS}" and userName = "${LoginName}"`;
                     break;
                 case CXLX == 'YHDZ':
-                    var sql = 'select * from MRM_USER_BEAN where YHDZ LIKE ' + CXCS + ' and userName = ' + LoginName;
+                    var sql = `select * from MRM_USER_BEAN where YHDZ LIKE "%${CXCS}%" and userName = "${LoginName}"`;
                     break;
                 case CXLX == 'YHMC':
-                    var sql = 'select * from MRM_USER_BEAN where YHMC LIKE ' + CXCS + ' and userName = ' + LoginName;
+                    var sql = `select * from MRM_USER_BEAN where YHMC LIKE "%${CXCS}%" and userName = "${LoginName}"`;
                     break;
             }
             var userdata = db.selectSqlSync({
@@ -580,24 +569,9 @@
                         datas: userlist
                     }
 
-
                     var str = template('userList', datas);
                     $('#dv div').remove();
                     $('#dv').append(str);
-
-
-                    var systemVersion = api.systemVersion;
-                    var versionArr = systemVersion.split('.');
-                    if (api.systemType == 'android') {
-                        if (versionArr[0] < 5) {
-                            $('.dv_3').addClass('dv_3_font');
-                            $('.dv_4').addClass('dv_4_font');
-                        } else {
-                            $('.dv_3').removeClass('dv_3_font');
-                            $('.dv_4').removeClass('dv_4_font');
-                        }
-                    }
-
                     fnReadyOpenWin();
                 } else {
                     $('#dv div').remove();
@@ -621,16 +595,16 @@
             }
             switch (true) {
                 case CXLX == 'YHBH':
-                    var Required = 'YHBH=' + CXCS + '&YHMC=&YHDZ=&YHDH=&SBBH=&PAGECODE=1';
+                    var Required = `YHBH=${CXCS}&YHMC=&YHDZ=&YHDH=&SBBH=&PAGECODE=1`;
                     break;
                 case CXLX == 'YHDZ':
-                    var Required = 'YHBH=&YHMC=&YHDZ=' + CXCS + '&YHDH=&SBBH=&PAGECODE=1';
+                    var Required = `YHBH=&YHMC=&YHDZ=${CXCS}&YHDH=&SBBH=&PAGECODE=1`;
                     break;
                 case CXLX == 'YHDH':
-                    var Required = 'YHBH=&YHMC=&YHDZ=&YHDH=' + CXCS + '&SBBH=&PAGECODE=1';
+                    var Required = `YHBH=&YHMC=&YHDZ=&YHDH=${CXCS}&SBBH=&PAGECODE=1`;
                     break;
                 case CXLX == 'YHMC':
-                    var Required = 'YHBH=&YHMC=' + CXCS + '&YHDZ=&YHDH=&SBBH=&PAGECODE=1';
+                    var Required = `YHBH=&YHMC=${CXCS}&YHDZ=&YHDH=&SBBH=&PAGECODE=1`;
                     break;
             }
             var Parameter = {
@@ -663,24 +637,6 @@
                             var str = template('userList', datas);
                             $('#dv div').remove();
                             $('#dv').append(str);
-
-                            var str = template('userList', datas);
-                            $('#dv div').remove();
-                            $('#dv').append(str);
-
-
-                            var systemVersion = api.systemVersion;
-                            var versionArr = systemVersion.split('.');
-                            if (api.systemType == 'android') {
-                                if (versionArr[0] < 5) {
-                                    $('.dv_3').addClass('dv_3_font');
-                                    $('.dv_4').addClass('dv_4_font');
-                                } else {
-                                    $('.dv_3').removeClass('dv_3_font');
-                                    $('.dv_4').removeClass('dv_4_font');
-                                }
-                            }
-
                             fnReadyOpenWin();
                         } else {
                             $('#dv div').remove();

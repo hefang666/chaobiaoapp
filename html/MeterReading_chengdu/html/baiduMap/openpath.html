@@ -689,6 +689,7 @@
                             "Parameter": JSON.stringify(Parameter)
                         })
                     }
+                    console.log(JSON.stringify(data));
 
                     fnPost('', body, 'application/json', false, function(ret, err) {
                         if (ret) {

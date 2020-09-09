@@ -221,6 +221,12 @@
                     <div class="aui-col-xs-6 aui-text-right"><input class="aui-checkbox" type="checkbox" id="checkbox-3" onclick="setAllNo(3)"></div>
                 </div>
             </div>
+            <!-- <div class="content_body_list">
+                <div class="aui-row" id='meterBigReadingList'>
+                    <div class="aui-col-xs-6">用水大户数据上传</div>
+                    <div class="aui-col-xs-6 aui-text-right"><input class="aui-checkbox" type="checkbox" id="checkbox-4" onclick="setAllNo(4)"></div>
+                </div>
+            </div> -->
             <div class="content_body_list other-data">
                 <div class="aui-row" id='otherDataList'>
                     <div class="aui-col-xs-6">其他数据上传</div>
@@ -246,7 +252,7 @@
         <div class="aui-col-xs-12">
             <div class="aui-row">
                 <div class="aui-col-xs-11">{{value.NAME}}</div>
-                <div class="aui-col-xs-1"><input class="aui-checkbox" type="checkbox" name="Fruit" value="{{value.CBCH}}" onclick="setOthers(3)"></div>
+                <div class="aui-col-xs-1"><input class="aui-checkbox" type="checkbox" name="Fruit" value="{{value.CBCH}}" onclick="setOthers(1)"></div>
             </div>
             <div class="aui-row">
                 <div class="aui-col-xs-6">已&nbsp;&nbsp;抄:&nbsp;&nbsp; {{value.YC}}</div>
@@ -264,11 +270,29 @@
         <div class="aui-col-xs-12">
             <div class="aui-row">
                 <div class="aui-col-xs-11">{{value.BZBH}}</div>
-                <div class="aui-col-xs-1"><input class="aui-checkbox" type="checkbox" name="Fruit3" value="{{value.BZBH}}" onclick="setOthers(1)"></div>
+                <div class="aui-col-xs-1"><input class="aui-checkbox" type="checkbox" name="Fruit3" value="{{value}}" onclick="setOthers(3)"></div>
             </div>
             <div class="aui-row">
-                <div class="aui-col-xs-6">已修改:&nbsp;&nbsp; {{value.YXG}}</div>
-                <div class="aui-col-xs-6">未修改:&nbsp;&nbsp; {{value.WXG}}</div>
+                <div class="aui-col-xs-6">已接收:&nbsp;&nbsp; {{value.YXG}}</div>
+                <div class="aui-col-xs-6">未接收:&nbsp;&nbsp; {{value.WXG}}</div>
+            </div>
+        </div>
+    </div>
+    {{/each}} {{else}}
+    <div class="no-data">暂无上传数据!</div>
+    {{/if}}
+</script>
+<script type="text/template" id='bigBookList'>
+    {{if datas.length > 0}} {{each datas value i}}
+    <div class="aui-row">
+        <div class="aui-col-xs-12">
+            <div class="aui-row">
+                <div class="aui-col-xs-11">{{value.NAME}}</div>
+                <div class="aui-col-xs-1"><input class="aui-checkbox" type="checkbox" name="Fruit4" value="{{value.CBCH}}" onclick="setOthers(4)"></div>
+            </div>
+            <div class="aui-row">
+                <div class="aui-col-xs-6">已&nbsp;&nbsp;抄:&nbsp;&nbsp; {{value.YC}}</div>
+                <div class="aui-col-xs-6">未&nbsp;&nbsp;抄:&nbsp;&nbsp; {{value.WC}}</div>
             </div>
         </div>
     </div>
@@ -282,7 +306,7 @@
         <div class="aui-col-xs-12">
             <div class="aui-row">
                 <div class="aui-col-xs-11">照片上传</div>
-                <div class="aui-col-xs-1"><input name="Fruit2" class="aui-checkbox" type="checkbox" value="{{value}}" onclick="setOthers(3)"></div>
+                <div class="aui-col-xs-1"><input name="Fruit2" class="aui-checkbox" type="checkbox" value="{{value}}" onclick="setOthers(2)"></div>
             </div>
         </div>
     </div>
@@ -366,6 +390,9 @@
     var MaintenanceList = []; //可以上传的工单编号。
     var checkMaintenanceID = []; //勾选中的工单编号。
 
+    var bigUserList = []; //要上传的用水大户表
+    var checkBigBooksID = []; //勾选中的用水大户表
+
     var currentBookIndex = 0; //checkBooksID勾选中的需要上传的数据，currentBookIndex代表正在上传的抄表册的下标，
     var mPageSize = 100; //分页数。
     var mPageNo = 1; //页码。
@@ -381,6 +408,7 @@
     var qbLog = []; //日志
     var qbmemo = []; //备忘录
     var qbWorkOrder = []; //异常记录数据
+    var qbBigUser = []; //当前要上传的所有用水大户抄表数据。
 
     var newqbUser = []; //当前要上传的抄表册里面的所有抄表数据。
     var newqbMaintenance = []; //当前要上传的报装编号里面的所有用户数据。
@@ -392,6 +420,7 @@
     var newqbLog = []; //日志
     var newqbmemo = []; //备忘录
     var newqbWorkOrder = []; //异常记录数据
+    var newqbBigUser = []; //当前要上传的用水大户抄表数据。
 
     var currentList = []; //当前上传的list.
     var sbjsList = []; //当前上传的水表接收list.
@@ -402,6 +431,7 @@
     var naviList = []; //当前上传的naviList
     var logList = []; //当前上传的logList
     var workorder; //当前上传的异常记录数据。
+    var bigUserList = []; //当前上传的用水大户list
 
     var workPhoto = []; //要上传的异常记录图片
 
@@ -434,6 +464,7 @@
         resetOtherQueryBuilder();
         initListView();
         initListView2();
+        initListView3();
         toScrollLeft2();
         queryErrUserList();
     };
@@ -522,6 +553,17 @@
         });
         qbPhoto = photodata.data;
         newqbPhoto = photodata.data;
+        var photobigdata = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select * from MRM_PHOTOS_BEAN where SFSC=0 and YHBH in (select YHBH from MRM_USERBIG_BEAN where CBBZ=1 and ZTSCCG=1 and userName="' + LoginName + '")'
+        });
+        if (photobigdata.data.length > 0) {
+            for (var i = 0; i < photobigdata.data.length; i++) {
+                qbPhoto.push(photobigdata.data[i]);
+                newqbPhoto.push(photobigdata.data[i]);
+            }
+        }
+
 
         var sbjsphotodata = db.selectSqlSync({
             name: 'CBtest',
@@ -590,15 +632,15 @@
                     for (var i = 0; i < ret.data.length; i++) {
                         var userdata_YC = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as YC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and CBBZ=1 and CWXX=" " and userName="' + LoginName + '"'
+                            sql: 'select count(*) as YC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and ZXBLX!="2" and CBBZ=1 and CWXX=" " and userName="' + LoginName + '"'
                         });
                         var userdata_WC = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as WC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and CBBZ=0 and userName="' + LoginName + '"'
+                            sql: 'select count(*) as WC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and ZXBLX!="2" and CBBZ=0 and userName="' + LoginName + '"'
                         });
                         var userdata_YSC = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as YSC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and ZTSCCG=1 and CWXX=" " and userName="' + LoginName + '"'
+                            sql: 'select count(*) as YSC from MRM_USER_BEAN where CBCH="' + ret.data[i].CBCH + '" and ZXBLX!="2" and ZTSCCG=1 and CWXX=" " and userName="' + LoginName + '"'
                         });
                         if (parseInt(userdata_YC.data[0].YC) > 0 && parseInt(userdata_YC.data[0].YC) > parseInt(userdata_YSC.data[0].YSC)) {
                             list.push({
@@ -618,7 +660,7 @@
                     var str = template('bookList', datas);
                     $('#meterReadingList').siblings().remove();
                     $('#meterReadingList').after(str);
-                    setTimeout(function() {
+                    setTimeout(() => {
                         api.hideProgress();
                     }, 500);
                     fnReadyOpenWin();
@@ -627,7 +669,7 @@
                     var str = template('bookList', datas);
                     $('#meterReadingList').siblings().remove();
                     $('#meterReadingList').after(str);
-                    setTimeout(function() {
+                    setTimeout(() => {
                         api.hideProgress();
                     }, 500);
                 }
@@ -657,19 +699,20 @@
                     for (var i = 0; i < ret.data.length; i++) {
                         var userdata_YXG = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as YXG from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SFXG=1 and CWXX=" " and userName="' + LoginName + '"'
+                            sql: 'select count(*) as YXG from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SBYTID="' + ret.data[i].SBYTID + '" and SFXG=1 and CWXX=" " and userName="' + LoginName + '"'
                         });
                         var userdata_WXG = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as WXG from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SFXG=0 and userName="' + LoginName + '"'
+                            sql: 'select count(*) as WXG from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SBYTID="' + ret.data[i].SBYTID + '" and SFXG=0 and userName="' + LoginName + '"'
                         });
                         var userdata_YSC = db.selectSqlSync({
                             name: 'CBtest',
-                            sql: 'select count(*) as YSC from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SFSC=1 and CWXX=" " and userName="' + LoginName + '"'
+                            sql: 'select count(*) as YSC from MRM_WATER_METER_USER where BZBH="' + ret.data[i].BZBH + '" and SBYTID="' + ret.data[i].SBYTID + '" and SFSC=1 and CWXX=" " and userName="' + LoginName + '"'
                         });
                         if (parseInt(userdata_YXG.data[0].YXG) > 0 && parseInt(userdata_YXG.data[0].YXG) > parseInt(userdata_YSC.data[0].YSC)) {
                             MaintenanceList.push({
                                 BZBH: ret.data[i].BZBH,
+                                SBYTID: ret.data[i].SBYTID,
                                 YXG: userdata_YXG.data[0].YXG,
                                 WXG: userdata_WXG.data[0].WXG,
                                 YSC: userdata_YSC.data[0].YSC
@@ -682,7 +725,7 @@
                     var str = template('mBookList', datas);
                     $('#waterMeterMaintenanceList').siblings().remove();
                     $('#waterMeterMaintenanceList').after(str);
-                    setTimeout(function() {
+                    setTimeout(() => {
                         api.hideProgress();
                     }, 500);
                     fnReadyOpenWin();
@@ -691,6 +734,73 @@
                     var str = template('mBookList', datas);
                     $('#waterMeterMaintenanceList').siblings().remove();
                     $('#waterMeterMaintenanceList').after(str);
+                }
+            }
+        });
+    }
+
+    //查询用水大户数据并展示
+    function initListView3() {
+        api.showProgress({
+            style: 'default',
+            animationType: 'fade',
+            title: '加载中...',
+            modal: true
+        });
+        bigUserList = [];
+        var db = api.require('db');
+        var datas = {
+            datas: bigUserList
+        }
+        db.selectSql({
+            name: 'CBtest',
+            sql: 'select * from MRM_BOOKSBIG_BEAN where userName="' + LoginName + '"'
+        }, function(ret, err) {
+            if (ret.status) {
+                if (ret.data.length > 0) {
+                    for (var i = 0; i < ret.data.length; i++) {
+                        var userdata_YC = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select count(*) as YC from MRM_USERBIG_BEAN where CBBZ=1 and CWXX=" " and userName="' + LoginName + '"'
+                        });
+                        var userdata_WC = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select count(*) as WC from MRM_USERBIG_BEAN where CBBZ=0 and userName="' + LoginName + '"'
+                        });
+                        var userdata_YSC = db.selectSqlSync({
+                            name: 'CBtest',
+                            sql: 'select count(*) as YSC from MRM_USERBIG_BEAN where ZTSCCG=1 and CWXX=" " and userName="' + LoginName + '"'
+                        });
+                        if (parseInt(userdata_YC.data[0].YC) > 0 && parseInt(userdata_YC.data[0].YC) > parseInt(userdata_YSC.data[0].YSC)) {
+                            bigUserList.push({
+                                NAME: '用水大户',
+                                CBCH: '1',
+                                CBCMC: ret.data[i].CBCMC,
+                                YZM: ret.data[i].YZM,
+                                YC: userdata_YC.data[0].YC,
+                                WC: userdata_WC.data[0].WC,
+                                YSC: userdata_YSC.data[0].YSC
+                            });
+                        } else {
+
+                        }
+                    }
+                    datas.datas = bigUserList;
+                    var str = template('bigBookList', datas);
+                    $('#meterBigReadingList').siblings().remove();
+                    $('#meterBigReadingList').after(str);
+                    setTimeout(() => {
+                        api.hideProgress();
+                    }, 500);
+                    fnReadyOpenWin();
+                } else {
+                    datas.datas = bigUserList;
+                    var str = template('bigBookList', datas);
+                    $('#meterBigReadingList').siblings().remove();
+                    $('#meterBigReadingList').after(str);
+                    setTimeout(() => {
+                        api.hideProgress();
+                    }, 500);
                 }
             }
         });
@@ -758,6 +868,18 @@
                     loves[i].checked = true;
                 }
             }
+        } else if (index == 4) {
+            var box = document.getElementById("checkbox-4");
+            var loves = document.getElementsByName("Fruit4");
+            if (box.checked == false) {
+                for (var i = 0; i < loves.length; i++) {
+                    loves[i].checked = false;
+                }
+            } else {
+                for (var i = 0; i < loves.length; i++) {
+                    loves[i].checked = true;
+                }
+            }
         } else {
             var box = document.getElementById("checkbox-2");
             var loves = document.getElementsByName("Fruit2");
@@ -793,6 +915,15 @@
                     return;
                 }
             }
+        } else if (index == 4) {
+            var loves = document.getElementsByName("Fruit4");
+            for (var i = 0; i < loves.length; i++) {
+                if (loves[i].checked == false) {
+                    var box = document.getElementById("checkbox-4");
+                    box.checked = false;
+                    return;
+                }
+            }
         } else {
             var loves = document.getElementsByName("Fruit2");
             for (var i = 0; i < loves.length; i++) {
@@ -809,11 +940,13 @@
     function upload() {
         checkBooksID = [];
         otherList = [];
-        checkMaintenanceID = []
+        checkMaintenanceID = [];
+        checkBigBooksID = [];
         var loves = document.getElementsByName("Fruit"); //获取抄表数据
         var loves2 = document.getElementsByName("Fruit2"); //获取日志数据
         var loves3 = document.getElementsByName("Fruit3"); //获取水表接收数据
-        if (loves.length == 0 && loves2.length == 0 && loves3.length == 0) {
+        var loves4 = document.getElementsByName("Fruit4"); //获取用水大户数据
+        if (loves.length == 0 && loves2.length == 0 && loves3.length == 0 && loves4.length == 0) {
             api.toast({
                 msg: '暂无上传数据!',
                 duration: 2000,
@@ -835,7 +968,18 @@
 
         for (var i = 0; i < loves3.length; i++) {
             if (loves3[i].checked == true) {
-                checkMaintenanceID.push(loves3[i].value);
+                var param = JSON.parse(loves3[i].value);
+                var isCheckedTrue = {
+                    "BZBH": param.BZBH,
+                    "SBYTID": param.SBYTID
+                }
+                checkMaintenanceID.push(isCheckedTrue);
+            }
+        }
+
+        for (var i = 0; i < loves4.length; i++) {
+            if (loves4[i].checked == true) {
+                checkBigBooksID.push(loves4[i].value);
             }
         }
 
@@ -849,6 +993,11 @@
                 "正在上传基础数据,请稍后...");
             resetQueryBuilder2(); //获取当前抄表册所有要上传的用户数据。
             continueUpdateData2(); //获取当前上传的抄表数据。
+        } else if (checkBigBooksID != null && checkBigBooksID.length > 0) {
+            adilog("正在上传用水大户数据 " + (currentBookIndex + 1) + "/" + checkBigBooksID.length,
+                "正在上传用水大户数据,请稍后...");
+            resetQueryBuilder3(); //获取当前要上传的用水大户数据。
+            continueUpdateData3(); //获取当前上传的抄表数据。
         } else {
             if (otherList != null && otherList.length > 0) {
                 adilog("正在上传其它数据",
@@ -880,7 +1029,7 @@
         //获取当前抄表册所有要上传的用户数据。
         var userdataAll = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and CBBZ=1 and ZTSCCG=0 and userName="' + LoginName + '"'
+            sql: 'select * from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and ZXBLX!="2" and CBBZ=1 and ZTSCCG=0 and userName="' + LoginName + '"'
         });
         qbUser = userdataAll.data;
         newqbUser = chunkArrayInGroups(userdataAll.data, mPageSize);
@@ -900,7 +1049,7 @@
                         "CBBZ": currentList[i].CBBZ,
                         "QD": currentList[i].QD,
                         "ZD": currentList[i].XBZD,
-                        "YL": currentList[i].YL,
+                        "YL": currentList[i].SJSL,
                         "CBRQ": currentList[i].CBRQ,
                         "BYXZT": currentList[i].BYXZT,
                         "JD": currentList[i].CBYSZJD,
@@ -923,7 +1072,7 @@
                         "CBBZ": currentList[i].CBBZ,
                         "QD": currentList[i].QD,
                         "ZD": currentList[i].ZD,
-                        "YL": currentList[i].YL,
+                        "YL": currentList[i].SJSL,
                         "CBRQ": currentList[i].CBRQ,
                         "BYXZT": currentList[i].BYXZT,
                         "JD": currentList[i].CBYSZJD,
@@ -946,7 +1095,7 @@
                         "CBBZ": currentList[i].CBBZ,
                         "QD": currentList[i].QD,
                         "ZD": currentList[i].XBZD,
-                        "YL": currentList[i].YL,
+                        "YL": currentList[i].SJSL,
                         "CBRQ": currentList[i].CBRQ,
                         "BYXZT": currentList[i].BYXZT,
                         "JD": currentList[i].CBYSZJD,
@@ -963,7 +1112,7 @@
                         "CBBZ": currentList[i].CBBZ,
                         "QD": currentList[i].QD,
                         "ZD": currentList[i].ZD,
-                        "YL": currentList[i].YL,
+                        "YL": currentList[i].SJSL,
                         "CBRQ": currentList[i].CBRQ,
                         "BYXZT": currentList[i].BYXZT,
                         "JD": currentList[i].CBYSZJD,
@@ -993,8 +1142,10 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         }
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
             if (ret) {
+                console.log(JSON.stringify(ret));
                 if (ret.Status == 0) {
                     var Data = [];
                     if (ret.Data != "" && ret.Data != " ") {
@@ -1032,6 +1183,12 @@
                                     "正在上传水表接收数据,请稍后...");
                                 resetQueryBuilder2(); //获取当前抄表册所有要上传的用户数据。
                                 continueUpdateData2(); //获取当前上传的抄表数据。
+                            } else if (checkBigBooksID != null && checkBigBooksID.length > 0) {
+                                currentBookIndex = 0;
+                                adilog("正在上传用水大户数据 " + (currentBookIndex + 1) + "/" + checkMaintenanceID.length,
+                                    "正在上传用水大户数据,请稍后...");
+                                resetQueryBuilder3(); //获取当前所有要上传的用水大户数据。
+                                continueUpdateData3(); //获取当前上传的用水大户数据。
                             } else {
                                 uploadOthers();
                             }
@@ -1082,7 +1239,7 @@
             if (!type) {
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'update MRM_USER_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0 where YHBH="' + currentList[i].YHBH + '" and userName="' + LoginName + '"'
+                    sql: 'update MRM_USER_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + currentList[i].YHBH + '" and userName="' + LoginName + '"'
                 });
             }
         }
@@ -1094,15 +1251,15 @@
         var db = api.require('db');
         var userdata_YC = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select count(*) as YC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and CBBZ=1 and userName="' + LoginName + '"'
+            sql: 'select count(*) as YC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and CBBZ=1 and ZXBLX!="2" and userName="' + LoginName + '"'
         });
         var userdata_WC = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select count(*) as WC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and CBBZ=0 and userName="' + LoginName + '"'
+            sql: 'select count(*) as WC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and CBBZ=0 and ZXBLX!="2" and userName="' + LoginName + '"'
         });
         var userdata_YSC = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select count(*) as YSC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and ZTSCCG=1 and userName="' + LoginName + '"'
+            sql: 'select count(*) as YSC from MRM_USER_BEAN where CBCH="' + checkBooksID[currentBookIndex] + '" and ZTSCCG=1 and ZXBLX!="2" and userName="' + LoginName + '"'
         });
         var ret = db.executeSqlSync({
             name: 'CBtest',
@@ -1114,7 +1271,7 @@
     //获取当前工单编号所有要上传的用户数据。
     function resetQueryBuilder2() {
         for (var i = 0; i < MaintenanceList.length; i++) {
-            if (MaintenanceList[i].CBCH == checkMaintenanceID[currentBookIndex]) {
+            if (MaintenanceList[i].CBCH == checkMaintenanceID[currentBookIndex].BZBH) {
                 currentCBCMC = MaintenanceList[i].CBCH;
                 break;
             }
@@ -1125,7 +1282,7 @@
         //获取当前抄表册所有要上传的用户数据。
         var userdataAll = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_WATER_METER_USER where BZBH="' + checkMaintenanceID[currentBookIndex] + '" and SFXG=1 and SFSC=0 and userName="' + LoginName + '"'
+            sql: 'select * from MRM_WATER_METER_USER where BZBH="' + checkMaintenanceID[currentBookIndex].BZBH + '" and SBYTID="' + checkMaintenanceID[currentBookIndex].SBYTID + '" and SFXG=1 and SFSC=0 and userName="' + LoginName + '"'
         });
         qbMaintenance = userdataAll.data;
         newqbMaintenance = chunkArrayInGroups(userdataAll.data, mPageSize);
@@ -1148,7 +1305,13 @@
                 "SBZT": sbjsList[i].SBZT,
                 "BLSJ": sbjsList[i].BLSJ,
                 "BZBH": sbjsList[i].BZBH,
-                "BZ": sbjsList[i].BZ
+                "BZ": sbjsList[i].BZ,
+                "YSXZID": "", //用水性质ID
+                "XZXFID": sbjsList[i].XZXFID, //性质细分ID
+                "SBLXID": sbjsList[i].SBLXID, //水表类型id
+                "SBLX": sbjsList[i].SBLX, //水表类型
+                "CJBH": sbjsList[i].CJBH, //采集编号
+                "KJ": sbjsList[i].KJ //口径
             }
             records.push(user);
         }
@@ -1172,6 +1335,7 @@
         }
         fnPost('', body, 'application/json', false, function(ret, err) {
             if (ret) {
+                console.log(JSON.stringify(ret));
                 if (ret.Status == 0) {
                     var Data = [];
                     if (ret.Data != "" && ret.Data != " ") {
@@ -1208,6 +1372,12 @@
                                     "正在上传基础数据,请稍后...");
                                 resetQueryBuilder(); //获取当前抄表册所有要上传的用户数据。
                                 continueUpdateData(); //获取当前上传的抄表数据。
+                            } else if (checkBigBooksID != null && checkBigBooksID.length > 0) {
+                                currentBookIndex = 0;
+                                adilog("正在上传用水大户数据 " + (currentBookIndex + 1) + "/" + checkMaintenanceID.length,
+                                    "正在上传用水大户数据,请稍后...");
+                                resetQueryBuilder3(); //获取当前所有要上传的用水大户数据。
+                                continueUpdateData3(); //获取当前上传的用水大户数据。
                             } else {
                                 uploadOthers();
                             }
@@ -1263,6 +1433,260 @@
             }
         }
         //updateBookInfo2(); //更新抄表册数据
+    }
+
+    //获取当前所有要上传的用水大户数据。
+    function resetQueryBuilder3() {
+        currentCBCMC = "用水大户";
+        currentYZM = bigUserList[0].YZM;
+
+        mPageNo = 1;
+        var db = api.require('db');
+
+        //获取当前所有要上传的用水大户数据。
+        var userdataAll = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select * from MRM_USERBIG_BEAN where ZXBLX!="2" and CBBZ=1 and ZTSCCG=0 and userName="' + LoginName + '"'
+        });
+        qbBigUser = userdataAll.data;
+        newqbBigUser = chunkArrayInGroups(userdataAll.data, mPageSize);
+    }
+
+    //获取当前上传的抄表数据。
+    function continueUpdateData3() {
+        //获取当前上传的抄表数据。
+        bigUserList = newqbBigUser[mPageNo - 1];
+
+        var records = [];
+        for (var i = 0; i < bigUserList.length; i++) {
+            if (bigUserList[i].SFXG == "1") {
+                if (bigUserList[i].CLFS == "3") {
+                    var user = {
+                        "YHBH": bigUserList[i].YHBH,
+                        "CBBZ": bigUserList[i].CBBZ,
+                        "QD": bigUserList[i].QD,
+                        "ZD": bigUserList[i].XBZD,
+                        "YL": bigUserList[i].SJSL,
+                        "CBRQ": bigUserList[i].CBRQ,
+                        "BYXZT": bigUserList[i].BYXZT,
+                        "JD": bigUserList[i].CBYSZJD,
+                        "WD": bigUserList[i].CBYSZWD,
+                        "CJDZ": bigUserList[i].CJDZ,
+                        "SFXG": bigUserList[i].SFXG,
+                        "YHMC": bigUserList[i].YHMC,
+                        "YHDZ": bigUserList[i].YHDZ,
+                        "SBWZ": bigUserList[i].SBWZ,
+                        "YDDH": bigUserList[i].YDDH,
+                        "GDDH": bigUserList[i].GDDH,
+                        "XBQD": bigUserList[i].XBQD,
+                        "JBZD": bigUserList[i].ZD,
+                        "HBRQ": bigUserList[i].ZHHBRQ
+                    }
+                    records.push(user);
+                } else {
+                    var user = {
+                        "YHBH": bigUserList[i].YHBH,
+                        "CBBZ": bigUserList[i].CBBZ,
+                        "QD": bigUserList[i].QD,
+                        "ZD": bigUserList[i].ZD,
+                        "YL": bigUserList[i].SJSL,
+                        "CBRQ": bigUserList[i].CBRQ,
+                        "BYXZT": bigUserList[i].BYXZT,
+                        "JD": bigUserList[i].CBYSZJD,
+                        "WD": bigUserList[i].CBYSZWD,
+                        "CJDZ": bigUserList[i].CJDZ,
+                        "SFXG": bigUserList[i].SFXG,
+                        "YHMC": bigUserList[i].YHMC,
+                        "YHDZ": bigUserList[i].YHDZ,
+                        "SBWZ": bigUserList[i].SBWZ,
+                        "YDDH": bigUserList[i].YDDH,
+                        "GDDH": bigUserList[i].GDDH,
+                        "HBRQ": bigUserList[i].ZHHBRQ
+                    }
+                    records.push(user);
+                }
+            } else {
+                if (bigUserList[i].CLFS == "3") {
+                    var user = {
+                        "YHBH": bigUserList[i].YHBH,
+                        "CBBZ": bigUserList[i].CBBZ,
+                        "QD": bigUserList[i].QD,
+                        "ZD": bigUserList[i].XBZD,
+                        "YL": bigUserList[i].SJSL,
+                        "CBRQ": bigUserList[i].CBRQ,
+                        "BYXZT": bigUserList[i].BYXZT,
+                        "JD": bigUserList[i].CBYSZJD,
+                        "WD": bigUserList[i].CBYSZWD,
+                        "CJDZ": bigUserList[i].CJDZ,
+                        "XBQD": bigUserList[i].XBQD,
+                        "JBZD": bigUserList[i].ZD,
+                        "HBRQ": bigUserList[i].ZHHBRQ
+                    }
+                    records.push(user);
+                } else {
+                    var user = {
+                        "YHBH": bigUserList[i].YHBH,
+                        "CBBZ": bigUserList[i].CBBZ,
+                        "QD": bigUserList[i].QD,
+                        "ZD": bigUserList[i].ZD,
+                        "YL": bigUserList[i].SJSL,
+                        "CBRQ": bigUserList[i].CBRQ,
+                        "BYXZT": bigUserList[i].BYXZT,
+                        "JD": bigUserList[i].CBYSZJD,
+                        "WD": bigUserList[i].CBYSZWD,
+                        "CJDZ": bigUserList[i].CJDZ,
+                        "HBRQ": bigUserList[i].ZHHBRQ
+                    }
+                    records.push(user);
+                }
+            }
+        }
+        var Parameter = {
+            "ClientId": api.deviceId,
+            "ClientName": api.deviceModel,
+            "OperatorId": $api.getStorage('cbOperatorId'),
+            "OperatorName": $api.getStorage('cbOperatorName'),
+            "Required": "BookId=" + 940501 + "&CheckCode=" + currentYZM + "&Rewrite=true",
+            "Type": "202",
+            "Records": records
+        };
+        var body = {
+                body: JSON.stringify({
+                    "UserName": $api.getStorage('cbOperatorName'),
+                    "Password": $api.getStorage('cbPassword'),
+                    "SerialNo": dataTime(),
+                    "Method": "R999",
+                    "Parameter": JSON.stringify(Parameter)
+                })
+            }
+            //alert(body.body);
+        fnPost('', body, 'application/json', false, function(ret, err) {
+            //alert(JSON.stringify(ret));
+            if (ret) {
+                console.log(JSON.stringify(ret));
+                if (ret.Status == 0) {
+                    var Data = [];
+                    if (ret.Data != "" && ret.Data != " ") {
+                        Data = JSON.parse(ret.Data);
+                    }
+                    //var Data = JSON.parse(ret.Data);
+                    if (Data.length == 0) {
+
+                    } else {
+                        var db = api.require('db');
+                        for (var i = 0; i < Data.length; i++) {
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'update MRM_USERBIG_BEAN set CWXX="' + Data[i].SCSB_MESSAGE + '" where YHBH="' + Data[i].YHBH + '" and userName="' + LoginName + '"'
+                            });
+                            //alert('update MRM_USERBIG_BEAN set CWXX="' + Data[i].SCSB_MESSAGE + '" where YHBH="' + Data[i].YHBH + '" and userName="' + LoginName + '"');
+                            //alert(JSON.stringify(ret));
+                        }
+                    }
+
+                    setSuccessData3(bigUserList, Data); //修改上传标识
+
+                    if (mPageNo == newqbBigUser.length) {
+                        //当前本上传完
+                        currentBookIndex++;
+                        if (currentBookIndex + 1 <= checkBigBooksID.length) {
+                            updateAdilogData("正在上传用水大户数据 " + (currentBookIndex + 1) + "/" + checkBigBooksID.length,
+                                "正在上传用水大户数据,请稍后...", 0);
+                            //上传其它抄表册
+                            resetQueryBuilder3(); //获取当前抄表册所有要上传的用户数据。
+                            continueUpdateData3(); //获取当前上传的抄表数据。
+                        } else {
+                            //抄表册上传完毕
+                            if (checkBooksID != null && checkBooksID.length > 0) {
+                                currentBookIndex = 0;
+                                adilog("正在上传基础数据 " + (currentBookIndex + 1) + "/" + checkBooksID.length,
+                                    "正在上传基础数据,请稍后...");
+                                resetQueryBuilder(); //获取当前抄表册所有要上传的用户数据。
+                                continueUpdateData(); //获取当前上传的抄表数据。
+                            } else if (checkMaintenanceID != null && checkMaintenanceID.length > 0) {
+                                currentBookIndex = 0;
+                                adilog("正在上传水表接收数据 " + (currentBookIndex + 1) + "/" + checkMaintenanceID.length,
+                                    "正在上传水表接收数据,请稍后...");
+                                resetQueryBuilder2(); //获取当前抄表册所有要上传的用户数据。
+                                continueUpdateData2(); //获取当前上传的抄表数据。
+                            } else {
+                                uploadOthers();
+                            }
+                        }
+                    } else {
+                        var value = GetPercent((mPageNo - 1) * mPageSize + bigUserList.length, qbBigUser.length);
+                        updateAdilogData("正在上传用水大户数据 " + (currentBookIndex + 1) + "/" + checkBigBooksID.length,
+                            "正在上传用水大户数据,请稍后...", value);
+                        mPageNo++;
+                        continueUpdateData3(); //获取当前上传的抄表数据。
+                    }
+                    insertRecords(OperateID, "上传用户数据", "上传用户数据" + currentCBCMC + "成功");
+                } else {
+                    insertRecords(OperateID, "上传用户数据", "上传用户数据" + currentCBCMC + "失败");
+                    insertRecords(OperateID, "msg", ret.Message);
+
+                    var UIActionProgress = api.require('UIActionProgress');
+                    UIActionProgress.close();
+                    api.toast({
+                        msg: ret.Message,
+                        duration: 3000,
+                        location: 'bottom'
+                    });
+                    theRefresh();
+                }
+            } else {
+                var UIActionProgress = api.require('UIActionProgress');
+                UIActionProgress.close();
+                api.alert({
+                    msg: JSON.stringify(err)
+                });
+                theRefresh();
+            }
+        })
+    }
+
+    //修改上传标识
+    function setSuccessData3(bigUserList, Data) {
+        var db = api.require('db');
+        for (var i = 0; i < bigUserList.length; i++) {
+            var type = false;
+            for (var j = 0; j < Data.length; j++) {
+                if (bigUserList[i].YHBH == Data[j].YHBH) {
+                    type = true;
+                    continue;
+                }
+            }
+            if (!type) {
+                var ret = db.executeSqlSync({
+                    name: 'CBtest',
+                    sql: 'update MRM_USERBIG_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + bigUserList[i].YHBH + '" and userName="' + LoginName + '"'
+                });
+                //alert('update MRM_USERBIG_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + bigUserList[i].YHBH + '" and userName="' + LoginName + '"');
+                //alert(JSON.stringify(ret));
+            }
+        }
+        updateBookInfo3(); //更新抄表册数据
+    }
+
+    //更新抄表册数据
+    function updateBookInfo3() {
+        var db = api.require('db');
+        var userdata_YC = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select count(*) as YC from MRM_USERBIG_BEAN where CBBZ=1 and ZXBLX!="2" and userName="' + LoginName + '"'
+        });
+        var userdata_WC = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select count(*) as WC from MRM_USERBIG_BEAN where CBBZ=0 and ZXBLX!="2" and userName="' + LoginName + '"'
+        });
+        var userdata_YSC = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select count(*) as YSC from MRM_USERBIG_BEAN where ZTSCCG=1 and ZXBLX!="2" and userName="' + LoginName + '"'
+        });
+        var ret = db.executeSqlSync({
+            name: 'CBtest',
+            sql: 'update MRM_BOOKSBIG_BEAN set YC="' + userdata_YC.data[0].YC + '", WC="' + userdata_WC.data[0].WC + '", YSC="' + userdata_YSC.data[0].YSC + '" where userName="' + LoginName + '"'
+        });
     }
 
     //上传其它数据
@@ -1343,6 +1767,7 @@
         resetOtherQueryBuilder();
         initListView();
         initListView2();
+        initListView3();
         queryErrUserList();
     }
 
@@ -1631,8 +2056,22 @@
             });
         } else {
             //组装完成上传
-            var Required = 'YHBH=' + workorder.YHBH + '&YHMC=' + workorder.YHMC + '&YHDZ=' + workorder.YHDZ + '&SBKJ=' + workorder.KJ + '&LXRDH=' + workorder.YDDH + '&SBRDH=' + $api.getStorage('cbOperatorMoblie') + '&GZYY=' + workorder.BZ +
-                '&BZ=' + workorder.YYMS;
+            var yhbh = workorder.YHBH == null ? "" : workorder.YHBH;
+            var yhmc = workorder.YHMC == null ? "" : workorder.YHMC;
+            var yhdz = workorder.YHDZ == null ? "" : workorder.YHDZ;
+            var sbkj = workorder.SBKJ == null ? "" : workorder.SBKJ;
+            var yddh = workorder.YDDH == null ? "" : workorder.YDDH;
+            var sbrdh = $api.getStorage('cbOperatorMoblie') == null ? "" : $api.getStorage('cbOperatorMoblie');
+            var gzyy = workorder.BZ == null ? "" : workorder.BZ;
+            var bz = workorder.YYMS == null ? "" : workorder.YYMS;
+            var Required = 'YHBH=' + yhbh +
+                '&YHMC=' + yhmc +
+                '&YHDZ=' + yhdz +
+                '&SBKJ=' + sbkj +
+                '&LXRDH=' + yddh +
+                '&SBRDH=' + sbrdh +
+                '&GZYY=' + gzyy +
+                '&BZ=' + bz;
             var Parameter = {
                 "ClientId": api.deviceId,
                 "ClientName": api.deviceModel,
@@ -1709,6 +2148,8 @@
                         }
                     }
                 } else {
+                    var UIActionProgress = api.require('UIActionProgress');
+                    UIActionProgress.close();
                     api.alert({
                         msg: JSON.stringify(err.msg)
                     });
@@ -1738,8 +2179,8 @@
                     "PhotoType": "4",
                     "Longitude": sbjsphotoList.JD,
                     "Latitude": sbjsphotoList.WD,
-                    "OrderNo": "1",
-                    "Errtype": "",
+                    "OrderNo": sbjsphotoList.NotLoction,
+                    "Errtype": sbjsphotoList.ZPLX,
                     "Remark": "",
                     "Type": "302",
                     "PhotoInfo": ""

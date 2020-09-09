@@ -101,7 +101,7 @@
         <div id="footer_text"></div>
         <div id="footer_btn">
             <div><button id="btn1" onclick="queryLY()">搜索蓝牙设备</button></div>
-            <div><button id="btn2" onclick="Print()">打印通知单</button></div>
+            <div><button id="btn2" onclick="show()">打印通知单</button></div>
         </div>
     </div>
 </body>
@@ -131,8 +131,12 @@
 
     var db;
     var user;
-    var userlist = [];
+    var userListALL = []; //所有要打印的用户数据
+    var userIndex = 0; //打印的用户下标
+    var userlist = []; //打印数据
     var bool = false;
+    var LoginName = "";
+    var printModule;
     apiready = function() {
         db = api.require('db');
         //api.parseTapmode();
@@ -142,13 +146,246 @@
         headerH = $api.offset(header).h;
         // $('#book').css('margin-top', '' + headerH + 'px');
         db = api.require('db');
+        LoginName = $api.getStorage('loginData').userName;
+        printModule = api.require('posPrinter');
+        var param = {
+            'status': 'bonded'
+        };
+        printModule.getBluetoothPrinters(param, function(ret, err) {
+            LYNAME = [];
+            if (ret.length > 0) {
+                for (var i = 0; i < ret.length; i++) {
+                    LYNAME.push(ret[i].name);
+                    LYADDRESS.push(ret[i].address);
+                }
+
+                address = LYADDRESS[0];
+                $('#footer_text').html(LYNAME[0] + "连接成功");
+                bool = true;
+            } else {
+                $('#footer_text').html("未连接蓝牙设备");
+                bool = false;
+            }
+        });
         queryUser();
+        //show();
     };
+
+    function show() {
+        if (!bool) {
+            api.toast({
+                msg: '请搜索并连接蓝牙设备',
+                duration: 2000,
+                location: 'bottom'
+            });
+            return;
+        }
+        api.showProgress({
+            title: '连接打印中...',
+            text: '先稍后...',
+            modal: true
+        });
+        userListALL = [];
+        userIndex = 0;
+        userlist = [];
+        var ret = db.selectSqlSync({
+            name: 'CBtest',
+            sql: 'select * from MRM_USER_BEAN where YHBH="' + api.pageParam.userYHBH + '" and userName="' + LoginName + '"'
+        });
+        if (ret.status) {
+            if (ret.data.length > 0) {
+                userListALL = ret.data;
+                var retXB = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + api.pageParam.userYHBH + '" and ZXBLX="2" and userName="' + LoginName + '"'
+                });
+                if (retXB.data.length > 0) {
+                    for (var i = 0; i < retXB.data.length; i++) {
+                        retXB.data[i].CBCH = userListALL[0].CBCH
+                        userListALL.push(retXB.data[i]);
+                    }
+                }
+
+                queryUser2();
+            }
+        }
+    }
+
+    function queryUser2() {
+        if (userIndex < userListALL.length) { //当前抄表册还有数据，继续打印。
+            user = userListALL[userIndex];
+            userlist.push({
+                "name": "============================="
+            });
+            userlist.push({
+                "name": "区段号：" + user.CBCH
+            });
+            userlist.push({
+                "name": "档案号：" + user.YHBH
+            });
+            userlist.push({
+                "name": "用水性质：" + user.YSXZ
+            });
+            userlist.push({
+                "name": "户名：" + user.YHMC
+            });
+            userlist.push({
+                "name": "地址：" + user.YHDZ
+            });
+            userlist.push({
+                "name": "口径：" + user.KJ
+            });
+            userlist.push({
+                "name": "预存余额：" + user.YCYE
+            });
+            userlist.push({
+                "name": "欠费金额：" + user.QFJE
+            });
+            if (user.SBYTID != "4") {
+                userlist.push({
+                    "name": "============================="
+                });
+                if (user.SBYXZT == "正常") {
+                    userlist.push({
+                        "name": "本月查表情况：" + user.SBYXZT
+                    });
+                } else {
+                    if (user.SLLRFS == "1") {
+                        userlist.push({
+                            "name": "本月查表情况：正常(" + user.SBYXZT + ")"
+                        });
+                    } else if (user.SLLRFS == "2") {
+                        userlist.push({
+                            "name": "本月查表情况：估水(" + user.SBYXZT + ")"
+                        });
+                    } else if (user.SLLRFS == "3") {
+                        userlist.push({
+                            "name": "本月查表情况：翻表(" + user.SBYXZT + ")"
+                        });
+                    }
+                }
+
+                userlist.push({
+                    "name": "      起度  止度  水量"
+                });
+                if (user.CLFS == "3") {
+                    userlist.push({
+                        "name": "水表  " + user.XBQD + "  " + user.XBZD + "  " + user.YL
+                    });
+                } else {
+                    userlist.push({
+                        "name": "水表  " + user.QD + "  " + user.ZD + "  " + user.YL
+                    });
+                }
+                userlist.push({
+                    "name": "      水量  单价  金额"
+                });
+                count();
+            }
+            userlist.push({
+                "name": "============================="
+            });
+            userlist.push({
+                "name": "查表员：" + $api.getStorage('cbOperatorMC')
+            });
+            userlist.push({
+                "name": "查表日期：" + (user.CBRQ).substring(0, 11)
+            });
+            userlist.push({
+                "name": "温馨提示："
+            });
+            if (user.YLZT != "正常") {
+                userlist.push({
+                    "name": "1.您本月" + user.YLZT
+                });
+                userlist.push({
+                    "name": "2.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢您的合作"
+                });
+                userlist.push({
+                    "name": "3.本次查表后本年累计用水量" + (parseInt(user.YL) + parseInt(user.NZYSL))
+                });
+            } else {
+                userlist.push({
+                    "name": "1.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢您的合作"
+                });
+                userlist.push({
+                    "name": "2.本次查表后本年累计用水量" + (parseInt(user.YL) + parseInt(user.NZYSL))
+                });
+            }
+            userlist.push({
+                "name": "============================="
+            });
+            userlist.push({
+                "name": "供水服务热线：962965"
+            });
+
+            Print();
+        } else {
+            api.hideProgress();
+            api.toast({
+                msg: '打印完成',
+                duration: 2000,
+                location: 'bottom'
+            });
+
+        }
+    }
+
+    function Print() {
+        var orderInfo;
+        orderInfo = "<CA>成都市自来水有限责任公司</CA><BR>";
+        orderInfo += "<CA>水费备款通知单</CA><BR>";
+        for (var i = 0; i < userlist.length; i++) {
+            orderInfo += userlist[i].name + "<BR>";
+        }
+
+        var param = {
+            printerAddr: address
+        };
+        printModule.getPrinterStatus(param, function(ret, err) {
+            if (ret) {
+                if (ret.online == "yes" && ret.paper == "yes") {
+                    var param = {
+                        taskList: [{
+                            printerAddr: address,
+                            content: orderInfo,
+                            keepAlive: true, //蓝牙打印机，建议把keepAlive设为true
+                            copyNum: 1
+                        }]
+                    };
+
+                    printModule.print(param, function(ret, err) {
+                        if (ret) {
+                            var ret = db.executeSqlSync({
+                                name: 'CBtest',
+                                sql: 'update MRM_USER_BEAN set SFDY="1" where YHBH="' + user.YHBH + '" and userName="' + LoginName + '"'
+                            });
+
+                            userlist = [];
+                            userIndex++;
+                            setTimeout("queryUser2()", "4000");
+                        } else {
+                            userlist = [];
+                            api.hideProgress();
+                            alert(err.msg);
+                        }
+                    });
+                } else {
+                    api.hideProgress();
+                    alert("打印机处于离线或缺纸状态！");
+                }
+            } else {
+                printUserList = [];
+                api.hideProgress();
+                alert(err.msg);
+            }
+        });
+    }
 
     function queryUser() {
         var ret = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_USER_BEAN where YHBH="' + api.pageParam.userYHBH + '"'
+            sql: 'select * from MRM_USER_BEAN where YHBH="' + api.pageParam.userYHBH + '" and userName="' + LoginName + '"'
         });
         if (ret.status) {
             if (ret.data.length > 0) {
@@ -180,45 +417,47 @@
                 userlist.push({
                     "name": "欠费金额：" + user.QFJE
                 });
-                userlist.push({
-                    "name": "============================="
-                });
-                if (user.SBYXZT == "正常") {
+                if (user.SBYTID != "4") {
                     userlist.push({
-                        "name": "本月查表情况：" + user.SBYXZT
+                        "name": "============================="
                     });
-                } else {
-                    if (user.SLLRFS == "1") {
+                    if (user.SBYXZT == "正常") {
                         userlist.push({
-                            "name": "本月查表情况：正常(" + user.SBYXZT + ")"
+                            "name": "本月查表情况：" + user.SBYXZT
                         });
-                    } else if (user.SLLRFS == "2") {
+                    } else {
+                        if (user.SLLRFS == "1") {
+                            userlist.push({
+                                "name": "本月查表情况：正常(" + user.SBYXZT + ")"
+                            });
+                        } else if (user.SLLRFS == "2") {
+                            userlist.push({
+                                "name": "本月查表情况：估水(" + user.SBYXZT + ")"
+                            });
+                        } else if (user.SLLRFS == "3") {
+                            userlist.push({
+                                "name": "本月查表情况：翻表(" + user.SBYXZT + ")"
+                            });
+                        }
+                    }
+
+                    userlist.push({
+                        "name": "      起度  止度  水量"
+                    });
+                    if (user.CLFS == "3") {
                         userlist.push({
-                            "name": "本月查表情况：估水(" + user.SBYXZT + ")"
+                            "name": "水表  " + user.XBQD + "  " + user.XBZD + "  " + user.YL
                         });
-                    } else if (user.SLLRFS == "3") {
+                    } else {
                         userlist.push({
-                            "name": "本月查表情况：翻表(" + user.SBYXZT + ")"
+                            "name": "水表  " + user.QD + "  " + user.ZD + "  " + user.YL
                         });
                     }
-                }
-
-                userlist.push({
-                    "name": "      起度    止度    水量"
-                });
-                if (user.CLFS == "3") {
                     userlist.push({
-                        "name": "水表  " + user.XBQD + "    " + user.XBZD + "    " + user.YL
+                        "name": "      水量  单价  金额"
                     });
-                } else {
-                    userlist.push({
-                        "name": "水表  " + user.QD + "    " + user.ZD + "    " + user.YL
-                    });
+                    count();
                 }
-                userlist.push({
-                    "name": "      水量    单价    金额"
-                });
-                count();
                 userlist.push({
                     "name": "============================="
                 });
@@ -233,17 +472,17 @@
                 });
                 if (user.YLZT != "正常") {
                     userlist.push({
-                        "name": "1.你本月" + user.YLZT
+                        "name": "1.您本月" + user.YLZT
                     });
                     userlist.push({
-                        "name": "2.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢你的合作"
+                        "name": "2.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢您的合作"
                     });
                     userlist.push({
                         "name": "3.本次查表后本年累计用水量" + (parseInt(user.YL) + parseInt(user.NZYSL))
                     });
                 } else {
                     userlist.push({
-                        "name": "1.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢你的合作"
+                        "name": "1.请于缴费日期内结清水费，逾期未交，我公司将按相关约定收取违约金，感谢您的合作"
                     });
                     userlist.push({
                         "name": "2.本次查表后本年累计用水量" + (parseInt(user.YL) + parseInt(user.NZYSL))
@@ -255,11 +494,11 @@
                 userlist.push({
                     "name": "供水服务热线：962965"
                 });
-                //alert(JSON.stringify(userlist));
+
                 var datas = {
-                        datas: userlist,
-                    }
-                    //alert("1sum:" + datas.sum);
+                    datas: userlist,
+                }
+
                 var str = template('userList', datas);
                 $('#dv').append(str);
                 fnReadyOpenWin();
@@ -274,6 +513,7 @@
 
         var consumption = user.YL;
         var countModelStr = user.DJC;
+        console.log(JSON.stringify(countModelStr));
         //var countModelStr = "{10000~10000~.4~0~[01@(0^29^2.5)(1^100^3)(2^-1^3.5)][05@(0^29^.8)(1^100^.8)(2^-1^.8)]}{10020~10021~.6~0~[01@(0^-1^4)][05@(0^-1^.8)]}"
         var temp = [];
         if (countModelStr != null && countModelStr != "") {
@@ -294,6 +534,7 @@
         for (var i = 0; i < temp.length; i++) {
             var tempArray = temp[i].split("~");
             //alert(JSON.stringify(tempArray));
+            console.log(JSON.stringify(tempArray));
             var YSXZId = tempArray[0];
             var YSXZXFId = tempArray[1];
             var BL = parseFloat(tempArray[2]);
@@ -343,6 +584,8 @@
 
         var countMethod = [];
         //alert("水量:" + water);
+        console.log(water);
+        console.log(countModel);
 
         countModel = countModel.slice(1);
         countModel = countModel.slice(0, (countModel.length - 1));
@@ -353,6 +596,94 @@
             //不存在
             countMethod.push(countModel)
         }
+        console.log(JSON.stringify(countMethod));
+        var hbdjArr = [];
+        var deleteArr = [];
+        for (let i = 0; i < countMethod.length; i++) {
+            var countType = countMethod[i].split("@");
+            var FYBM = countType[0]; // 费用编码
+            var step = countType[1];
+            var stepModer = [];
+
+            step = step.slice(1);
+            step = step.slice(0, (step.length - 1));
+            if (step.indexOf(")(") != -1) {
+                stepModer = step.split(")(");
+            } else {
+                stepModer.push(step);
+            }
+
+            for (let j = 0; j < stepModer.length; j++) {
+                if (FYBM == '01' || FYBM == '07' || FYBM == '09') {
+                    var computeType = stepModer[j].split("^");
+                    var JTXH = parseInt(computeType[0]);
+                    if (hbdjArr.length > 0) {
+                        for (let k = 0; k < hbdjArr.length; k++) {
+                            if (hbdjArr[k].JTXH == JTXH) {
+                                hbdjArr[k].DJ += parseFloat(computeType[2]);
+                                break;
+                            }
+                            if (k == (hbdjArr.length - 1)) {
+                                hbdjArr.push({
+                                    JTXH: JTXH,
+                                    DJ: parseFloat(computeType[2])
+                                });
+                                break;
+                            }
+                        }
+                    } else {
+                        hbdjArr.push({
+                            JTXH: JTXH,
+                            DJ: parseFloat(computeType[2])
+                        });
+                    }
+                }
+            }
+            if (FYBM == '07' || FYBM == '09') {
+                deleteArr.push(countMethod[i]);
+            }
+        }
+        if (deleteArr.length > 0) {
+            for (var i = 0; i < deleteArr.length; i++) {
+                for (var j = 0; j < countMethod.length; j++) {
+                    if (deleteArr[i] == countMethod[j]) {
+                        countMethod.splice(j, 1);
+
+                        j = 0;
+                    }
+                }
+            }
+        }
+        for (let i = 0; i < countMethod.length; i++) {
+            var countType = countMethod[i].split("@");
+            var FYBM = countType[0]; // 费用编码
+            var step = countType[1];
+            var stepModer = [];
+
+            step = step.slice(1);
+            step = step.slice(0, (step.length - 1));
+            if (step.indexOf(")(") != -1) {
+                stepModer = step.split(")(");
+            } else {
+                stepModer.push(step);
+            }
+            if (FYBM == '01') {
+                for (let j = 0; j < stepModer.length; j++) {
+                    var computeType = stepModer[j].split("^");
+                    for (let k = 0; k < hbdjArr.length; k++) {
+                        if (computeType[0] == hbdjArr[k].JTXH) {
+                            computeType[2] = hbdjArr[k].DJ;
+                        }
+                    }
+                    stepModer[j] = computeType.join('^');
+                }
+
+                countType[1] = stepModer.join(')(');
+                countType[1] = '(' + countType[1] + ')';
+                countMethod[i] = countType.join('@');
+            }
+        }
+        console.log(JSON.stringify(countMethod));
 
         //alert("countMethod" + JSON.stringify(countMethod));
         for (var i = 0; i < countMethod.length; i++) {
@@ -398,9 +729,30 @@
                         SFJE = water * DJ;
                         money += water * DJ;
                         SFJE = SFJE.toFixed(2);
-                        userlist.push({
-                            "name": JTXH + "阶    " + water + "    " + DJ + "    " + SFJE
-                        });
+                        if (user.JTBZ == "1") {
+                            if (FYBM == "01") {
+                                userlist.push({
+                                    "name": conversion(JTXH) + "阶水费  " + water + "  " + DJ.toFixed(2) + "  " + SFJE
+                                });
+                            } else if (FYBM == "05") {
+                                userlist.push({
+                                    "name": conversion(JTXH) + "阶污水费" + water + "  " + DJ.toFixed(2) + "  " + SFJE
+                                });
+                            }
+                        } else {
+                            if (FYBM == "01") {
+                                userlist.push({
+                                    "name": "水费  " + water + "  " + DJ.toFixed(2) + "  " + SFJE
+                                });
+                            } else if (FYBM == "05") {
+                                userlist.push({
+                                    "name": "污水费" + water + "  " + DJ.toFixed(2) + "  " + SFJE
+                                });
+                            }
+                        }
+                        // userlist.push({
+                        //     "name": conversion(JTXH) + "阶    " + water + "    " + DJ.toFixed(2) + "    " + SFJE
+                        // });
                         //alert("水费金额：" + SFJE);
                     } else {
                         // 存在阶梯
@@ -411,9 +763,30 @@
                                 money += SLBL * DJ;
                                 var current = SLBL * DJ;
                                 current = current.toFixed(2);
-                                userlist.push({
-                                    "name": JTXH + "阶    " + SLBL + "    " + DJ + "    " + current
-                                });
+                                // userlist.push({
+                                //     "name": conversion(JTXH) + "阶  " + SLBL + "  " + DJ.toFixed(2) + "  " + current
+                                // });
+                                if (user.JTBZ == "1") {
+                                    if (FYBM == "01") {
+                                        userlist.push({
+                                            "name": conversion(JTXH) + "阶水费  " + SLBL + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    } else if (FYBM == "05") {
+                                        userlist.push({
+                                            "name": conversion(JTXH) + "阶污水费  " + SLBL + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    }
+                                } else {
+                                    if (FYBM == "01") {
+                                        userlist.push({
+                                            "name": "水费  " + SLBL + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    } else if (FYBM == "05") {
+                                        userlist.push({
+                                            "name": "污水费  " + SLBL + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    }
+                                }
                                 currentWater -= stepWater;
 
                                 SFJE += SLBL * DJ;
@@ -424,9 +797,30 @@
                                 money += currentWater * DJ;
                                 var current = currentWater * DJ;
                                 current = current.toFixed(2);
-                                userlist.push({
-                                    "name": JTXH + "阶    " + currentWater + "    " + DJ + "    " + current
-                                });
+                                // userlist.push({
+                                //     "name": conversion(JTXH) + "阶  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                // });
+                                if (user.JTBZ == "1") {
+                                    if (FYBM == "01") {
+                                        userlist.push({
+                                            "name": conversion(JTXH) + "阶水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    } else if (FYBM == "05") {
+                                        userlist.push({
+                                            "name": conversion(JTXH) + "阶污水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    }
+                                } else {
+                                    if (FYBM == "01") {
+                                        userlist.push({
+                                            "name": "水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    } else if (FYBM == "05") {
+                                        userlist.push({
+                                            "name": "污水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                        });
+                                    }
+                                }
                                 lastBM = FYBM;
                                 currentWater = water;
 
@@ -440,9 +834,30 @@
                             money += (currentWater) * DJ;
                             var current = (currentWater) * DJ;
                             current = current.toFixed(2);
-                            userlist.push({
-                                "name": JTXH + "阶    " + currentWater + "    " + DJ + "    " + current
-                            });
+                            // userlist.push({
+                            //     "name": conversion(JTXH) + "阶  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                            // });
+                            if (user.JTBZ == "1") {
+                                if (FYBM == "01") {
+                                    userlist.push({
+                                        "name": conversion(JTXH) + "阶水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                    });
+                                } else if (FYBM == "05") {
+                                    userlist.push({
+                                        "name": conversion(JTXH) + "阶污水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                    });
+                                }
+                            } else {
+                                if (FYBM == "01") {
+                                    userlist.push({
+                                        "name": "水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                    });
+                                } else if (FYBM == "05") {
+                                    userlist.push({
+                                        "name": "污水费  " + currentWater + "  " + DJ.toFixed(2) + "  " + current
+                                    });
+                                }
+                            }
                             lastBM = FYBM;
                             currentWater = water;
 
@@ -463,7 +878,6 @@
     var address
 
     function queryLY() {
-        var printModule = api.require('posPrinter');
         var param = {
             'status': 'bonded'
         };
@@ -490,68 +904,104 @@
         });
     }
 
-    function Print() {
-        if (!bool) {
-            api.toast({
-                msg: '请搜索并连接蓝牙设备',
-                duration: 2000,
-                location: 'bottom'
-            });
-            return;
+    // function Print() {
+    //     if (!bool) {
+    //         api.toast({
+    //             msg: '请搜索并连接蓝牙设备',
+    //             duration: 2000,
+    //             location: 'bottom'
+    //         });
+    //         return;
+    //     }
+    //     api.showProgress({
+    //         title: '连接打印中...',
+    //         text: '先稍后...',
+    //         modal: true
+    //     });
+    //     var orderInfo;
+    //     orderInfo = "<CA>成都市自来水有限责任公司</CA><BR>";
+    //     orderInfo += "<CA>水费备款通知单</CA><BR>";
+    //     for (var i = 0; i < userlist.length; i++) {
+    //         orderInfo += userlist[i].name + "<BR>";
+    //     }
+    //     // orderInfo += "--------------------------------<BR>";
+    //     // orderInfo += "番　　　　　　 1.0    1   1.0<BR>";
+    //     // orderInfo += "番茄　　　　　 10.0   10  10.0<BR>";
+    //     // orderInfo += "番茄炒　　　　 10.0   100 100.0<BR>";
+    //     // orderInfo += "番茄炒粉　　　 100.0  100 100.0<BR>";
+    //     // orderInfo += "番茄炒粉粉　　 1000.0 1   100.0<BR>";
+    //     // orderInfo += "番茄炒粉粉粉粉 100.0  100 100.0<BR>";
+    //     // orderInfo += "番茄炒粉粉粉粉 15.0   1   15.0<BR>";
+    //     // orderInfo += "备注：快点送到<BR>";
+    //     // orderInfo += "--------------------------------<BR>";
+    //     // orderInfo += "合计：xx.0元<BR>";
+    //     // orderInfo += "送货地点：xxxxxxxxxxxxxxxxx<BR>";
+    //     // orderInfo += "联系电话：138000000000<BR>";
+    //     // orderInfo += "订餐时间：2011-01-06 19:30:10<BR>";
+    //     // orderInfo += "<QR>(300)http://www.baidu.com</QR><BR>";
+    //     // orderInfo += " <CUT>";
+    //     var param = {
+    //         printerAddr: address
+    //     };
+    //     printModule.getPrinterStatus(param, function(ret, err) {
+    //         if (ret) {
+    //             if (ret.online == "yes" && ret.paper == "yes") {
+    //                 var param = {
+    //                     taskList: [{
+    //                         printerAddr: address,
+    //                         content: orderInfo,
+    //                         keepAlive: true, //蓝牙打印机，建议把keepAlive设为true
+    //                         copyNum: 1
+    //                     }]
+    //                 };
+    //
+    //                 printModule.print(param, function(ret, err) {
+    //                     api.hideProgress();
+    //                     if (ret) {
+    //                         api.toast({
+    //                             msg: '打印完成',
+    //                             duration: 2000,
+    //                             location: 'bottom'
+    //                         });
+    //                         var ret = db.executeSqlSync({
+    //                             name: 'CBtest',
+    //                             sql: 'update MRM_USER_BEAN set SFDY="1" where YHBH="' + user.YHBH + '" and userName="' + LoginName + '"'
+    //                         });
+    //                     } else {
+    //                         alert(err.msg);
+    //                     }
+    //                 });
+    //             } else {
+    //                 api.hideProgress();
+    //                 alert("打印机处于离线或缺纸状态！");
+    //             }
+    //         } else {
+    //             api.hideProgress();
+    //             alert(err.msg);
+    //         }
+    //     });
+    // }
+
+    function conversion(num) {
+        if (num == "0") {
+            return "一"
+        } else if (num == "1") {
+            return "二"
+        } else if (num == "2") {
+            return "三"
+        } else if (num == "3") {
+            return "四"
+        } else if (num == "4") {
+            return "五"
+        } else if (num == "5") {
+            return "六"
+        } else if (num == "6") {
+            return "七"
+        } else if (num == "7") {
+            return "八"
+        } else if (num == "8") {
+            return "九"
         }
-        api.showProgress({
-            title: '连接打印中...',
-            text: '先稍后...',
-            modal: true
-        });
-        var orderInfo;
-        orderInfo = "<CA>成都市自来水有限责任公司</CA><BR>";
-        orderInfo += "<CA>水费备款通知单</CA><BR>";
-        for (var i = 0; i < userlist.length; i++) {
-            orderInfo += userlist[i].name + "<BR>";
-        }
-        // orderInfo += "--------------------------------<BR>";
-        // orderInfo += "番　　　　　　 1.0    1   1.0<BR>";
-        // orderInfo += "番茄　　　　　 10.0   10  10.0<BR>";
-        // orderInfo += "番茄炒　　　　 10.0   100 100.0<BR>";
-        // orderInfo += "番茄炒粉　　　 100.0  100 100.0<BR>";
-        // orderInfo += "番茄炒粉粉　　 1000.0 1   100.0<BR>";
-        // orderInfo += "番茄炒粉粉粉粉 100.0  100 100.0<BR>";
-        // orderInfo += "番茄炒粉粉粉粉 15.0   1   15.0<BR>";
-        // orderInfo += "备注：快点送到<BR>";
-        // orderInfo += "--------------------------------<BR>";
-        // orderInfo += "合计：xx.0元<BR>";
-        // orderInfo += "送货地点：xxxxxxxxxxxxxxxxx<BR>";
-        // orderInfo += "联系电话：138000000000<BR>";
-        // orderInfo += "订餐时间：2011-01-06 19:30:10<BR>";
-        // orderInfo += "<QR>(300)http://www.baidu.com</QR><BR>";
-        // orderInfo += " <CUT>";
-        var printModule = api.require('posPrinter');
-        var param = {
-            taskList: [{
-                printerAddr: address,
-                content: orderInfo,
-                keepAlive: true, //蓝牙打印机，建议把keepAlive设为true
-                copyNum: 1
-            }]
-        };
-        //printModule.printOnSpecifiedPrinters(param);
-        printModule.print(param, function(ret, err) {
-            api.hideProgress();
-            if (ret) {
-                api.toast({
-                    msg: '打印完成',
-                    duration: 2000,
-                    location: 'bottom'
-                });
-                var ret = db.executeSqlSync({
-                    name: 'CBtest',
-                    sql: 'update MRM_USER_BEAN set SFDY="1" where YHBH="'+user.YHBH+'" and userName="' + LoginName + '"'
-                });
-            } else {
-                alert(err.msg);
-            }
-        });
     }
 
     var actionList = {

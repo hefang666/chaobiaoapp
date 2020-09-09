@@ -368,7 +368,7 @@
         var db = api.require('db');
         var historydata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_HISTORYS_BEAN where LSLX="导航" and userName="' + LoginName + '" ORDER BY _id DESC limit 10'
+            sql: 'select * from MRM_HISTORYS_BEAN where LSLX="大户导航" and userName="' + LoginName + '" ORDER BY _id DESC limit 10'
         });
         if (historydata.status) {
             if (historydata.data.length > 0) {
@@ -450,13 +450,13 @@
         // 重复的查询不在加入表中
         db.selectSql({
             name: 'CBtest',
-            sql: `SELECT * FROM MRM_HISTORYS_BEAN where LSLX="导航" and userName="${LoginName}" and CXCS = "${CXCS}"`
+            sql: `SELECT * FROM MRM_HISTORYS_BEAN where LSLX="大户导航" and userName="${LoginName}" and CXCS = "${CXCS}"`
         }, function(ret, err) {
             if (ret.status) {
                 if (ret.data.length == 0) {
                     var data = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: "INSERT INTO MRM_HISTORYS_BEAN (userName,LSLX,CXLX,CXCS) VALUES ('" + LoginName + "', '导航', '" + CXLX + "', '" + CXCS + "')"
+                        sql: "INSERT INTO MRM_HISTORYS_BEAN (userName,LSLX,CXLX,CXCS) VALUES ('" + LoginName + "', '大户导航', '" + CXLX + "', '" + CXCS + "')"
                     });
                 }
             }
@@ -464,13 +464,13 @@
         var sql = "";
         switch (true) {
             case CXCS == undefined || CXCS == "":
-                var sql = `select * from MRM_USER_BEAN where userName="${LoginName}"`;
+                var sql = `select * from MRM_USERBIG_BEAN where userName="${LoginName}"`;
                 break;
             case CXLX == 'YHBH':
-                var sql = `select * from MRM_USER_BEAN where YHBH = "${CXCS}" and userName="${LoginName}"`;
+                var sql = `select * from MRM_USERBIG_BEAN where YHBH = "${CXCS}" and userName="${LoginName}"`;
                 break;
             case CXLX == 'YHMC':
-                var sql = `select * from MRM_USER_BEAN where YHMC like "%${CXCS}%" and userName="${LoginName}"`;
+                var sql = `select * from MRM_USERBIG_BEAN where YHMC like "%${CXCS}%" and userName="${LoginName}"`;
                 break;
 
         }
@@ -513,9 +513,9 @@
         // var sql = "";
         // var db = api.require('db');
         // if (CXLX == "全部" || CXCS == "") {
-        //     sql = 'select * from MRM_USER_BEAN';
+        //     sql = 'select * from MRM_USERBIG_BEAN';
         // } else {
-        //     sql = 'select * from MRM_USER_BEAN where ' + CXLX + ' LIKE "%' + CXCS + '%"';
+        //     sql = 'select * from MRM_USERBIG_BEAN where ' + CXLX + ' LIKE "%' + CXCS + '%"';
         //
         //     var data = db.executeSqlSync({
         //         name: 'CBtest',
@@ -564,7 +564,7 @@
         var db = api.require('db');
         var userdata = db.selectSqlSync({
             name: 'CBtest',
-            sql: 'select * from MRM_USER_BEAN where ' + CXLX + ' LIKE "%' + CXCS + '%" and userName="' + LoginName + '"'
+            sql: 'select * from MRM_USERBIG_BEAN where ' + CXLX + ' LIKE "%' + CXCS + '%" and userName="' + LoginName + '"'
         });
         userlist = [];
         if (userdata.status) {
@@ -599,7 +599,7 @@
         var yhbh = $(el).attr('data-id');
         var jsfun = 'showUser("' + yhbh + '");';
         api.execScript({
-            name: 'baiduMap',
+            name: 'baiduMapBig',
             script: jsfun
         });
         api.closeWin();

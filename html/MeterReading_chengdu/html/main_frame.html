@@ -10,12 +10,82 @@
     <link rel="stylesheet" type="text/css" href="../../public/css/swiper.min.css" />
     <link rel="stylesheet" type="text/css" href="../../public/css/home.css" />
     <link rel="stylesheet" type="text/css" href="../../public/css/style.css" />
-    <link rel="stylesheet" type="text/css" href="../css/public.css">
     <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            background-color: rgba(243, 243, 243.1);
+        }
+
+        #center {
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            background-color: #F5F5F5;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-content: flex-start;
+        }
+
+        .flex-wrap-box {
+            /*display: flex;
+      flex-flow: column;*/
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
+        }
+
+        .header .aui-pull-left {
+            padding-left: 1.2rem;
+        }
+
+        .header .aui-title {
+            font-size: 1.14rem;
+            font-family: Source Han Sans SC;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 1);
+            /*line-height:5.48rem;*/
+        }
+
+        .header .flex-wrap {
+            /*display: flex;*/
+            /*flex-flow: row;*/
+            width: 100%;
+            background: #fff;
+            /*height: 5.85rem;*/
+            background: rgba(243, 243, 243.1);
+            padding-bottom: 1rem;
+        }
+
+        .body {
+            background: transparent;
+        }
+
+        #main {
+            margin-top: 3.5rem;
+        }
+
         .aui-card-list-content #AppView img {
             margin: 0 auto;
             width: 4.125rem;
         }
+        /*.shangchuan{
+      background: pink;
+    }*/
+        /*.select>.aui-card-list
+    .aui-card-list-content
+    .aui-row
+    .aui-col-xs-6 .shangchuan .shangchuanimg{
+      width: 6.1rem!important;
+    }*/
+
         .select>.aui-card-list {
             background: transparent;
         }
@@ -93,9 +163,7 @@
 
         .card {
             width: 49.33vw;
-            /*width: 100%;*/
             height: 53.07vw;
-            /*height: 100%;*/
             background-color: #fff;
             display: flex;
             flex-direction: column;
@@ -115,9 +183,7 @@
 
         .card2 {
             width: 49.33vw;
-            /*width: 53vw;*/
             height: 107.48vw;
-            /*height: 100%;*/
             background-color: #fff;
             display: flex;
             flex-direction: column;
@@ -146,6 +212,13 @@
             height: 8rem;
             background: url("../image/MeteReading/home/chaobiao.png") no-repeat center;
             background-size: 4.75rem 5.4rem;
+        }
+
+        .ApplyTask2 {
+            width: 3.85rem;
+            height: 4rem;
+            background: url("../image/MeteReading/home/chaobiao.png") no-repeat center;
+            background-size: 2.48rem 3.18rem;
         }
 
         .MeterNo {
@@ -198,31 +271,30 @@
         }
 
         .admin {
-          width: 100%;
-          /*display: flex;*/
-          /*flex-direction: row;*/
-          /*display: box;*/
+            display: flex;
+            flex-direction: row;
         }
     </style>
 </head>
 
 <body>
-    <div class="header-box">
+    <div id="wrap" class="flex-wrap flex-vertical">
         <header class="aui-bar aui-bar-nav header" id="header">
             <div class="aui-pull-left aui-btn" tapmode data-action='back'>
                 <span class="aui-iconfont aui-icon-left"></span>
             </div>
             <div class="aui-title">抄表系统</div>
+
         </header>
     </div>
 
-    <div id="center" class="main-box">
-        <div class="admin aui-clearfix" style="">
-            <div id="gongneng1" style="float: left; width: 49.33vw;">
+    <div id="center">
+        <div class="admin">
+            <div id="gongneng1" style="margin-right:1.34vw;">
 
             </div>
-            <div style="float: right; width: 49.33vw;">
-                <div id="gongneng2" style="margin-bottom:1.34vw; background: red;">
+            <div>
+                <div id="gongneng2" style="margin-bottom:1.34vw;">
 
                 </div>
                 <div id="gongneng3" style="margin-bottom:1.34vw;">
@@ -230,8 +302,6 @@
                 </div>
             </div>
         </div>
-
-
         <!-- <div class="admin">
             <div style="margin-right:1.34vw;">
                 <div class="card2" onclick="openWin('开始抄表')">
@@ -329,6 +399,51 @@
 <script type="text/javascript" src="../../public/script/template.js"></script>
 <script type="text/javascript" src="../../public/script/swiper.min.js"></script>
 <script type="text/javascript" src="../../public/script/aui-collapse.js"></script>
+<script type="text/template" id='appList'>
+    {{each list value i}} {{if value.NAME=="开始抄表"}}
+    <div class="aui-col-xs-6 open-win" win='cbwork/cbhome'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/chaobiao.png" />抄表
+        </div>
+    </div>
+    {{else if value.NAME =="上传数据"}}
+    <div class="aui-col-xs-6 open-win" win='userUpload/userUpload'>
+        <div class="appRow shangchuan">
+            <img src="../image/MeteReading/home/shangchaun.png" / class="shangchuanimg">上传
+        </div>
+    </div>
+    {{else if value.NAME =="导航图片"}}
+    <div class="aui-col-xs-6 open-win" win='baiduMap/baiduMap'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/daohang.png" />导航
+        </div>
+    </div>
+    {{else if value.NAME =="抄表统计"}}
+    <div class="aui-col-xs-6 open-win" win='statistical/statistical'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/tongji.png" />统计
+        </div>
+    </div>
+    {{else if value.NAME =="查询用户"}}
+    <div class="aui-col-xs-6 open-win" win='queryUser/queryUser'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/yonghuchauxn.png" />查询
+        </div>
+    </div>
+    {{else if value.NAME =="操作日志"}}
+    <div class="aui-col-xs-6 open-win" win='log/log'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/rzhi.png" />日志
+        </div>
+    </div>
+    {{else if value.NAME =="申报工单"}}
+    <div class="aui-col-xs-6 open-win" win='workOrder/workOrderList'>
+        <div class="appRow">
+            <img src="../image/MeteReading/home/shenbaogongdan.png" />申报工单
+        </div>
+    </div>
+    {{/if}} {{/each}}
+</script>
 <script type="text/javascript">
     var SetupAlldata;
     var UserId = "";
@@ -373,7 +488,7 @@
                 } else {}
             });
         } else {
-            setTimeout(function(){
+            setTimeout(() => {
                 getUserInfo();
             }, 300)
         }
@@ -484,7 +599,7 @@
                 // 抄表本表
                 // var ret = db.executeSqlSync({
                 //     name: 'CBtest',
-                //     sql: 'DROP TABLE MRM_BOOKS_BEAN'
+                //     sql: 'DROP TABLE MRM_WATER_METER_USER'
                 // });
 
                 //设置界面的选中
@@ -531,7 +646,7 @@
                 if (!ret.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE MRM_BOOKS_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"CBCMC" TEXT,"BBCYHZS" TEXT,"DQCBXH" TEXT,"YZM" TEXT,"SFSC" TEXT,"SFTX" TEXT,"JHR" TEXT,"YCSM" TEXT,"YSC" TEXT,"YC" TEXT,"WC" TEXT,"YXZ" TEXT,"XZDD" TEXT,"CBBRZ" TEXT,"CBBDATA" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"GDSBS" INTEGER,"XCYH" TEXT)'
+                        sql: 'CREATE TABLE MRM_BOOKS_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"CBCMC" TEXT,"BBCYHZS" TEXT,"BBCYHZSALL" TEXT,"DQCBXH" TEXT,"YZM" TEXT,"SFSC" TEXT,"SFTX" TEXT,"JHR" TEXT,"YCSM" TEXT,"YSC" TEXT,"YC" TEXT,"WC" TEXT,"YXZ" TEXT,"XZDD" TEXT,"CBBRZ" TEXT,"CBBDATA" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"GDSBS" INTEGER,"XCYH" TEXT)'
                     });
                 }
 
@@ -543,7 +658,7 @@
                 if (!ret.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE MRM_USER_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ZHBH" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBWZ" TEXT,"YHXXBZ" TEXT,"SBBH" TEXT,"GDDH" TEXT,"YDDH" TEXT,"CBCH" TEXT,"CBXH" INTEGER NOT NULL ,"YSXZ" TEXT,"XZXF" TEXT,"KJ" TEXT,"QD" TEXT,"ZD" TEXT,"YL" TEXT,"BJYL" TEXT,"CBRQ" TEXT,"SFGC" TEXT,"BYXZT" TEXT,"CBBZ" TEXT,"QYL" TEXT,"QFJE" TEXT,"SCCBRQ" TEXT,"SCSL" TEXT,"TQSL" TEXT,"PJSL" TEXT,"SFXG" TEXT,"CBYBH" TEXT,"CWXX" TEXT,"SFJF" TEXT,"FY" TEXT,"FYHJ" TEXT,"YCYE" TEXT,"DZXFPRICE" TEXT,"ZTSCCG" TEXT,"CBZQ" TEXT,"DJC" TEXT,"UID" TEXT,"SFJE" TEXT,"WSFJE" TEXT,"SFDJ" TEXT,"WSFDJ" TEXT,"NEXTMETERMONTH" TEXT,"ARREARMONTH" TEXT,"JWD" TEXT,"XGXXSC" TEXT,"WSFYHBL" TEXT,"RFID" TEXT,"SMZT" TEXT,"SMSJ" TEXT,"SFSF" TEXT,"SFSC" TEXT,"JTFY" TEXT,"POPULATION" TEXT,"ONERESIDUEAMOUNT" TEXT,"TWORESIDUEAMOUNT" TEXT,"THREERESIDUEAMOUNT" TEXT,"JTLJL" TEXT,"JSYPJL" TEXT,"SFJTYH" TEXT,"QFYS" TEXT,"REMARK" TEXT,"BEGINTIME" TEXT,"ENDTIME" TEXT,"CBYSZJD" TEXT,"CBYSZWD" TEXT,"CJDZ" TEXT ,"SBYXZT" TEXT,"YHZT" TEXT,"JFFS" TEXT,"SBYT" TEXT,"ZBBH" TEXT,"ZBZT" TEXT,"HHYSMS" TEXT,"YYQY" TEXT,"BWTP" TEXT,"JSYYSL" TEXT,"GSPQ" TEXT,"CBZTTEXT" TEXT,"QTMONEY" TEXT,"JFBS" TEXT,"SJBM" TEXT,"SFQZPZ" TEXT,"PATH" TEXT,"DWSFSC" TEXT,"XBBH" TEXT,"SLZT" TEXT,"YCBZ" TEXT,"NZYSL" TEXT,"ZXCBRQ" TEXT,"ZHHBRQ" TEXT,"QYRQ" TEXT,"SCLRFS" TEXT,"XBQD" TEXT,"XBZD" TEXT,"SBLC" TEXT,"CLFS" TEXT,"YLZT" TEXT,"SLLRFS" TEXT,"YSXZID" TEXT,"XZXFID" TEXT,"SFDY" TEXT)'
+                        sql: 'CREATE TABLE MRM_USER_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ZHBH" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBWZ" TEXT,"YHXXBZ" TEXT,"SBBH" TEXT,"GDDH" TEXT,"YDDH" TEXT,"CBCH" TEXT,"CBXH" INTEGER NOT NULL ,"YSXZ" TEXT,"XZXF" TEXT,"KJ" TEXT,"QD" TEXT,"ZD" TEXT,"YL" TEXT,"BJYL" TEXT,"CBRQ" TEXT,"SFGC" TEXT,"BYXZT" TEXT,"CBBZ" TEXT,"QYL" TEXT,"QFJE" TEXT,"SCCBRQ" TEXT,"SCSL" TEXT,"TQSL" TEXT,"PJSL" TEXT,"SFXG" TEXT,"CBYBH" TEXT,"CWXX" TEXT,"SFJF" TEXT,"FY" TEXT,"FYHJ" TEXT,"YCYE" TEXT,"DZXFPRICE" TEXT,"ZTSCCG" TEXT,"CBZQ" TEXT,"DJC" TEXT,"UID" TEXT,"SFJE" TEXT,"WSFJE" TEXT,"SFDJ" TEXT,"WSFDJ" TEXT,"NEXTMETERMONTH" TEXT,"ARREARMONTH" TEXT,"JWD" TEXT,"XGXXSC" TEXT,"WSFYHBL" TEXT,"RFID" TEXT,"SMZT" TEXT,"SMSJ" TEXT,"SFSF" TEXT,"SFSC" TEXT,"JTFY" TEXT,"POPULATION" TEXT,"ONERESIDUEAMOUNT" TEXT,"TWORESIDUEAMOUNT" TEXT,"THREERESIDUEAMOUNT" TEXT,"JTLJL" TEXT,"JSYPJL" TEXT,"SFJTYH" TEXT,"QFYS" TEXT,"REMARK" TEXT,"BEGINTIME" TEXT,"ENDTIME" TEXT,"CBYSZJD" TEXT,"CBYSZWD" TEXT,"CJDZ" TEXT ,"SBYXZT" TEXT,"YHZT" TEXT,"JFFS" TEXT,"SBYTID" TEXT,"SBYT" TEXT,"ZBBH" TEXT,"ZBZT" TEXT,"HHYSMS" TEXT,"YYQY" TEXT,"BWTP" TEXT,"JSYYSL" TEXT,"GSPQ" TEXT,"CBZTTEXT" TEXT,"QTMONEY" TEXT,"JFBS" TEXT,"SJBM" TEXT,"SFQZPZ" TEXT,"PATH" TEXT,"DWSFSC" TEXT,"XBBH" TEXT,"SLZT" TEXT,"YCBZ" TEXT,"NZYSL" TEXT,"ZXCBRQ" TEXT,"ZHHBRQ" TEXT,"QYRQ" TEXT,"SCLRFS" TEXT,"XBQD" TEXT,"XBZD" TEXT,"SBLC" TEXT,"CLFS" TEXT,"YLZT" TEXT,"SLLRFS" TEXT,"YSXZID" TEXT,"XZXFID" TEXT,"SFDY" TEXT,"SBBM" TEXT,"JTBZ" TEXT,"SJSL" TEXT,"ZXBZBBH" TEXT,"ZXBLX" TEXT,"ZXBJSFS" TEXT,"ZXBJSSX" INTEGER,"ZXBJSZ" TEXT)'
                     });
                 }
 
@@ -699,16 +814,7 @@
                 if (!ret.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE "MRM_WORKORDER_BEAN" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"QD" TEXT,"ZD" TEXT,"JLSJ" TEXT,"SFSC" TEXT' +
-                            ',"YCLXID" TEXT,"YCLXNAME" TEXT' +
-                            ',"FYQMID" TEXT,"FYQMNAME" TEXT' +
-                            ',"XXLYID" TEXT,"XXLYNAME" TEXT' +
-                            ',"JJQKID" TEXT,"JJQKNAME" TEXT' +
-                            ',"WTYYID" TEXT,"WTYYNAME" TEXT' +
-                            ',"GDLXID" TEXT,"GDLXNAME" TEXT' +
-                            ',"GDZTID" TEXT,"GDZTNAME" TEXT' +
-                            ',"LBXFID" TEXT,"LBXFNAME" TEXT' +
-                            ',"QTYY" TEXT,"SQMS" TEXT,"GDBH" TEXT,"KHDH" TEXT,"YYMS" TEXT,"BZ" TEXT,"JD" TEXT,"WD" TEXT,"DZ" TEXT,"LCBH" TEXT,"SFBF" TEXT,"CLJB" TEXT)'
+                        sql: 'CREATE TABLE "MRM_WORKORDER_BEAN" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBKJ" TEXT,"YDDH" TEXT,"BZ" TEXT,"YYMS" TEXT,"SFSC" TEXT)'
                     });
                 }
 
@@ -768,7 +874,7 @@
                 if (!ret.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE "MRM_WATER_METER_BOOK" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"BZBH" TEXT,"BBCYHZS" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"TEXT2" TEXT,"TEXT3" TEXT)'
+                        sql: 'CREATE TABLE "MRM_WATER_METER_BOOK" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"BZBH" TEXT,"BBCYHZS" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"SBYTID" TEXT,"SBYT" TEXT,"TEXT2" TEXT,"TEXT3" TEXT)'
                     });
                 }
 
@@ -780,7 +886,7 @@
                 if (!ret.status) {
                     var ret = db.executeSqlSync({
                         name: 'CBtest',
-                        sql: 'CREATE TABLE "MRM_WATER_METER_USER" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ZHBH" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBWZ" TEXT,"SBBH" TEXT,"GDDH" TEXT,"YDDH" TEXT,"CBCH" TEXT,"CBXH" TEXT,"YSXZ" TEXT,"XZXF" TEXT,"KJ" TEXT,"CBYBH" TEXT,"YYQY" TEXT,"GSPQ" TEXT,"CBZQ" TEXT,"SBYT" TEXT,"JWD" TEXT,"RFID" TEXT,"PATH" TEXT,"SBQD" TEXT,"SBZT" TEXT,"BLSJ" TEXT,"SFSC" TEXT,"SFXG" TEXT,"CWXX" TEXT,"BZBH" TEXT,"LXR" TEXT,"BZ" TEXT)'
+                        sql: 'CREATE TABLE "MRM_WATER_METER_USER" ("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ZHBH" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBWZ" TEXT,"SBBH" TEXT,"GDDH" TEXT,"YDDH" TEXT,"CBCH" TEXT,"CBXH" TEXT,"YSXZ" TEXT,"XZXF" TEXT,"KJ" TEXT,"CBYBH" TEXT,"YYQY" TEXT,"GSPQ" TEXT,"CBZQ" TEXT,"SBYT" TEXT,"JWD" TEXT,"RFID" TEXT,"PATH" TEXT,"SBQD" TEXT,"SBZT" TEXT,"BLSJ" TEXT,"SFSC" TEXT,"SFXG" TEXT,"CWXX" TEXT,"BZBH" TEXT,"LXR" TEXT,"BZ" TEXT,"YSXZID" TEXT,"XZXFID" TEXT,"SBLX" TEXT,"SBLXID" TEXT,"CJBH" TEXT,"SBYTID" TEXT)'
                     });
                 }
 
@@ -808,21 +914,73 @@
                     });
                 }
 
+                //创建用水性质表Water nature
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_WATER_NATURE'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_WATER_NATURE("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"NAME" TEXT,"YCZD1" TEXT,"YCZD2" TEXT)'
+                    });
+                }
+
+                //创建用水大户抄表册表
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_BOOKSBIG_BEAN'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_BOOKSBIG_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"CBCMC" TEXT,"BBCYHZS" TEXT,"BBCYHZSALL" TEXT,"DQCBXH" TEXT,"YZM" TEXT,"SFSC" TEXT,"SFTX" TEXT,"JHR" TEXT,"YCSM" TEXT,"YSC" TEXT,"YC" TEXT,"WC" TEXT,"YXZ" TEXT,"XZDD" TEXT,"CBBRZ" TEXT,"CBBDATA" TEXT,"CBNUMER" TEXT,"NOTDOWNLOAD" TEXT,"GDSBS" INTEGER,"XCYH" TEXT)'
+                    });
+                }
+
+                //创建用水大户用户表
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_USERBIG_BEAN'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_USERBIG_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ZHBH" TEXT,"YHBH" TEXT,"YHMC" TEXT,"YHDZ" TEXT,"SBWZ" TEXT,"YHXXBZ" TEXT,"SBBH" TEXT,"GDDH" TEXT,"YDDH" TEXT,"CBCH" TEXT,"CBXH" INTEGER NOT NULL ,"YSXZ" TEXT,"XZXF" TEXT,"KJ" TEXT,"QD" TEXT,"ZD" TEXT,"YL" TEXT,"BJYL" TEXT,"CBRQ" TEXT,"SFGC" TEXT,"BYXZT" TEXT,"CBBZ" TEXT,"QYL" TEXT,"QFJE" TEXT,"SCCBRQ" TEXT,"SCSL" TEXT,"TQSL" TEXT,"PJSL" TEXT,"SFXG" TEXT,"CBYBH" TEXT,"CWXX" TEXT,"SFJF" TEXT,"FY" TEXT,"FYHJ" TEXT,"YCYE" TEXT,"DZXFPRICE" TEXT,"ZTSCCG" TEXT,"CBZQ" TEXT,"DJC" TEXT,"UID" TEXT,"SFJE" TEXT,"WSFJE" TEXT,"SFDJ" TEXT,"WSFDJ" TEXT,"NEXTMETERMONTH" TEXT,"ARREARMONTH" TEXT,"JWD" TEXT,"XGXXSC" TEXT,"WSFYHBL" TEXT,"RFID" TEXT,"SMZT" TEXT,"SMSJ" TEXT,"SFSF" TEXT,"SFSC" TEXT,"JTFY" TEXT,"POPULATION" TEXT,"ONERESIDUEAMOUNT" TEXT,"TWORESIDUEAMOUNT" TEXT,"THREERESIDUEAMOUNT" TEXT,"JTLJL" TEXT,"JSYPJL" TEXT,"SFJTYH" TEXT,"QFYS" TEXT,"REMARK" TEXT,"BEGINTIME" TEXT,"ENDTIME" TEXT,"CBYSZJD" TEXT,"CBYSZWD" TEXT,"CJDZ" TEXT ,"SBYXZT" TEXT,"YHZT" TEXT,"JFFS" TEXT,"SBYTID" TEXT,"SBYT" TEXT,"ZBBH" TEXT,"ZBZT" TEXT,"HHYSMS" TEXT,"YYQY" TEXT,"BWTP" TEXT,"JSYYSL" TEXT,"GSPQ" TEXT,"CBZTTEXT" TEXT,"QTMONEY" TEXT,"JFBS" TEXT,"SJBM" TEXT,"SFQZPZ" TEXT,"PATH" TEXT,"DWSFSC" TEXT,"XBBH" TEXT,"SLZT" TEXT,"YCBZ" TEXT,"NZYSL" TEXT,"ZXCBRQ" TEXT,"ZHHBRQ" TEXT,"QYRQ" TEXT,"SCLRFS" TEXT,"XBQD" TEXT,"XBZD" TEXT,"SBLC" TEXT,"CLFS" TEXT,"YLZT" TEXT,"SLLRFS" TEXT,"YSXZID" TEXT,"XZXFID" TEXT,"SFDY" TEXT,"SBBM" TEXT,"JTBZ" TEXT,"SJSL" TEXT,"ZXBZBBH" TEXT,"ZXBLX" TEXT,"ZXBJSFS" TEXT,"ZXBJSSX" INTEGER,"ZXBJSZ" TEXT)'
+                    });
+                }
+
+                //创建用水大户照片存储表
+                var ret = db.selectSqlSync({
+                    name: 'CBtest',
+                    sql: 'SELECT * FROM MRM_PHOTOSBIG_BEAN'
+                });
+                if (!ret.status) {
+                    var ret = db.executeSqlSync({
+                        name: 'CBtest',
+                        sql: 'CREATE TABLE MRM_PHOTOSBIG_BEAN("_id" INTEGER PRIMARY KEY AUTOINCREMENT ,"userName" TEXT,"ID" TEXT,"CBCH" TEXT,"YHBH" TEXT,"ZPMC" TEXT,"ZPLJ" TEXT,"SFSC" TEXT,"CBRQ" TEXT,"ZPLX" TEXT,"ZPLXMC" TEXT,"JD" TEXT,"WD" TEXT,"NotLoction" TEXT,"NotNew" TEXT)'
+                    });
+                }
+
                 //判断抄表员是否有主页的功能权限数据，有就获取，没有的话跳转基础数据下载界面。
                 var mpabret = db.selectSqlSync({
                     name: 'CBtest',
                     sql: 'SELECT * FROM MRM_PERMISSION_ALL_BEAN where userName="' + LoginName + '" and ID in (select FUNCTION_ID from MRM_USER_PERMISSION_BEAN where userName="' + LoginName + '")'
                 });
-                api.hideProgress();
                 if (mpabret.status) {
-                    api.hideProgress();
                     if (mpabret.data.length > 0) {
+                        //alert("b");
                         permissionList = mpabret.data;
+                        var data = {
+                            NAME: "用水大户抄表"
+                        }
+                        permissionList.push(data);
                         $(".card").remove();
                         $('.card2').remove();
                         showView();
                     } else {
                         //跳转基础数据下载界面。
+                        api.hideProgress();
                         api.confirm({
                             title: '提示',
                             msg: '当前账号没有权限数据，是否下载。',
@@ -840,6 +998,9 @@
                             }
                         });
                     }
+                } else {
+                    api.hideProgress();
+                    alert(ret.msg);
                 }
             }
         });
@@ -866,6 +1027,8 @@
                 class1 = "theOrder";
             } else if (permissionList[i].NAME == "水表接收") {
                 class1 = "theOrder";
+            } else if (permissionList[i].NAME == "用水大户抄表") {
+                class1 = "ApplyTask2";
             }
             if (i == 0) { //第一个
                 var str = '<div class="card2" onclick="openWin(\'' + permissionList[i].NAME + '\')">' +
@@ -885,9 +1048,14 @@
                 $('#center').append(str);
             }
         }
+        api.hideProgress();
     }
 
     function insertHome() {
+        api.showProgress({
+            title: '加载中',
+            modal: false
+        });
         var db = api.require("db");
         db.selectSql({
             name: 'CBtest',
@@ -895,11 +1063,15 @@
         }, function(ret, err) {
             if (ret.status) {
                 permissionList = ret.data;
+                // var data = {
+                //     NAME: "用水大户抄表"
+                // }
+                // permissionList.push(data);
                 $(".card").remove();
                 $('.card2').remove();
                 showView();
             } else {
-
+                api.hideProgress();
             }
         });
     }
@@ -968,6 +1140,12 @@
                         api.openWin({
                             name: 'WaterMeterBooks',
                             url: './WaterMeterMaintenance/WaterMeterBooks.html',
+                        });
+                        break;
+                    } else if (name == "用水大户抄表") {
+                        api.openWin({
+                            name: 'MeterReaderUserBigList',
+                            url: './cbwork/MeterReading_userBigList.html',
                         });
                         break;
                     }

@@ -607,7 +607,9 @@
                 "Parameter": JSON.stringify(Parameter)
             })
         };
+        console.log(body.body);
         fnPost('', body, 'application/json', false, function(ret, err) {
+            console.log(JSON.stringify(ret));
             if (ret) {
                 if (ret.Status == 0) {
                     var Data = [];
@@ -866,6 +868,7 @@
                     "', '" + lon +
                     "', '" + lat +
                     "', '" + address + "')";
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -920,6 +923,7 @@
                     'JD="' + lon + '",' +
                     'WD="' + lat + '",' +
                     'DZ="' + address + '" where YHBH="' + userbean.YHBH + '"';
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -1053,7 +1057,7 @@
                             if (ret.data) {
                                 if (ret.data.length > 0) {
                                     uploadPhotoList = ret.data;
-                                    setTimeout(function() {
+                                    setTimeout(() => {
                                         uploadPhoto(0);
                                     }, 300);
                                 } else {

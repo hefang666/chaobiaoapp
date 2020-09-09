@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="maximum-scale=1.0, minimum-scale=1.0, user-scalable=0, initial-scale=1.0, width=device-width" />
     <meta name="format-detection" content="telephone=no, email=no, date=no, address=no">
-    <title>搜索根据用户编号</title>
+    <title>报装系统首页</title>
     <link rel="stylesheet" type="text/css" href="../../../public/css/style.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/api.css" />
     <link rel="stylesheet" type="text/css" href="../../../public/css/aui1.css" />
@@ -16,8 +16,6 @@
             width: 100%;
             height: 100%;
             background-color: rgba(243, 243, 243.1);
-            display: flex;
-            flex-direction: column;
         }
 
         .flex-wrap-box {
@@ -26,7 +24,7 @@
         }
 
         .header {
-            /*position: fixed;*/
+            position: fixed;
             top: 0;
             background: linear-gradient(90deg, rgba(46, 142, 250, 1), rgba(49, 89, 235, 1));
         }
@@ -80,13 +78,13 @@
         .aui-searchbar-input input {
             height: 2.3rem;
             font-size: 1rem;
-            /*width: 60%;*/
+            width: 60%;
         }
 
         .aui-searchbar .aui-searchbar-btn {
             height: 2.2rem;
             font-size: 1rem;
-            line-height: 2.2rem;
+            line-height: 1.8rem;
             width: 2.5rem;
         }
 
@@ -95,7 +93,7 @@
         }
 
         .aui-text-info {
-            color: rgba(49, 89, 235, 1)!important;
+            color: #5852F2 !important;
         }
 
         .aui-searchbar {
@@ -212,8 +210,8 @@
             flex-flow: column;
             height: 100%;
             overflow: hidden;
-            /*margin-top: 6.8rem;*/
-            padding-bottom: 7rem;
+            margin-top: 6.8rem;
+            padding-bottom: 5rem;
         }
 
         .storingList {
@@ -262,7 +260,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            text-align: center;
         }
 
         .serchList {
@@ -341,10 +338,6 @@
             font-size: 15px;
             height: 30px;
             line-height: 30px;
-            text-align: center;
-            background: #eee;
-            border-radius: 0.5rem;
-            margin-bottom: 0.2rem;
         }
 
         #query_dv1_div {
@@ -508,12 +501,12 @@
             <div class="aui-searchbar" id="search">
                 <div class="aui-searchbar-input aui-border-radius">
                     <i class="aui-iconfont aui-icon-search"></i>
-                    <input style="font-size:0.8rem" type="search" placeholder="请输入表册名称关键字查询" id="search-input" class="keyword">
+                    <input type="search" placeholder="请输入户号或户名" id="search-input" class="keyword">
                     <div class="aui-searchbar-clear-btn">
                         <i class="aui-iconfont aui-icon-close"></i>
                     </div>
                 </div>
-                <div class="aui-searchbar-btn cancel aui-text-info">搜索</div>
+                <div class="aui-searchbar-btn cancel">取消</div>
             </div>
         </header>
         <div class="content" id="content">
@@ -558,36 +551,25 @@
 <script type="text/template" id="Booksdata">
     {{each list value i}}
     <li>
-        <div class="dv" tapmode data-action='strongList' data-id="{{value.CBCH}}" data-yhbh="{{value.CBCMC}}">
+        <div class="dv" tapmode data-action='strongList' data-id="{{value.CBCH}}" data-yhbh="{{value.YHBH}}">
             <div id="dv_left">
                 {{i+1}}
             </div>
             <div id="dv_right">
                 <div class="dv_1">
-                    <div class="dv_1_dv1">{{value.CBCMC}}</div>
-                    {{if value.NOTDOWNLOAD!=1}}
-                    <div class="dv_1_dv2">未下载</div>
-                    {{else}}
-                    <div class="dv_1_dv2">已下载</div>
+                    <div class="dv_1_dv1">{{value.YHMC}}</div>
+                    {{if value.CBBZ == 1}}
+                    <div class="dv_1_dv2">已抄</div>
+                    {{else if value.CBBZ == 0}}
+                    <div class="dv_1_dv3">未抄</div>
                     {{/if}}
                 </div>
                 <div class="dv_3">
-                    {{if value.YC==""}}
-                    <div class="dv_3_dv1">已抄:0</div>
-                    {{else}}
-                    <div class="dv_3_dv1">已抄:{{value.YC}}</div>
-                    {{/if}} {{if value.YC==""}}
-                    <div class="dv_3_dv2">未抄:0</div>
-                    {{else}}
-                    <div class="dv_3_dv2">未抄:{{value.WC}}</div>
-                    {{/if}}
-                    <div class="dv_3_dv3">总表数:{{value.BBCYHZS}}</div>
+                    <div class="dv_3_dv1">起度:{{value.QD}}</div>
+                    <div class="dv_3_dv2">止度:{{value.ZD}}</div>
+                    <div class="dv_3_dv3">户号:{{value.YHBH}}</div>
                 </div>
-                {{if value.CBNUMER!=''}}
-                <div class="dv_4">下载:{{value.CBNUMER}}</div>
-                {{else}}
-                <div class="dv_4">下载:0</div>
-                {{/if}}
+                <div class="dv_4">{{value.YHDZ}}</div>
             </div>
         </div>
     </li>
@@ -610,6 +592,9 @@
         $api.fixStatusBar(header);
         // 计算header和tab元素的高度
         headerH = $api.offset(header).h;
+
+        // 实现沉浸式状态栏效果
+        $api.fixStatusBar(header);
         $api.fixTabBar(footer);
         // fnReady()
         // downloadBooks()
@@ -621,33 +606,33 @@
     var searchBarBtn = document.querySelector(".aui-searchbar .aui-searchbar-btn");
     var searchBarClearBtn = document.querySelector(".aui-searchbar .aui-searchbar-clear-btn");
     if (searchBar) {
-
+        searchBarInput.onclick = function() {
+            searchBarBtn.style.marginRight = 0;
+            searchBarBtn.style.opacity = 1
+            searchBarBtn.style.display = 'block';
+            $("#storingList").empty()
+            $('#serchList').empty()
+        }
         searchBarInput.oninput = function() {
             $("#det-content").empty();
             if (this.value.length) {
-                searchBarBtn.style.marginRight = 0;
-                searchBarBtn.style.opacity = 1;
                 searchBarClearBtn.style.display = 'block';
-                searchBarBtn.style.display = 'block';
-                // searchBarBtn.textContent = "搜索";
-                $("#storingList").empty();
-                $('#serchList').empty();
+                searchBarBtn.classList.add("aui-text-info");
+                searchBarBtn.textContent = "搜索";
             } else {
                 searchBarClearBtn.style.display = 'none';
-                // searchBarBtn.textContent = "取消";
-                $("#storingList").empty();
-                strongSerch();
+                searchBarBtn.classList.remove("aui-text-info");
+                searchBarBtn.textContent = "取消";
             }
         }
     }
     searchBarClearBtn.onclick = function() {
         this.style.display = 'none';
         searchBarInput.value = '';
-        searchBarBtn.style.opacity = 0;
-        searchBarBtn.style.display = 'none';
-        // searchBarBtn.textContent = "取消";
+        searchBarBtn.classList.remove("aui-text-info");
+        searchBarBtn.textContent = "取消";
         // selctData()
-        strongSerch();
+        strongSerch()
         $('#serchList').empty()
 
     }
@@ -679,7 +664,7 @@
         api.showProgress({
             style: 'default',
             animationType: 'fade',
-            title: '加载中...',
+            title: '努力加载中...',
             modal: false
         });
 
@@ -687,39 +672,24 @@
         var numer = $("#search-input").val()
         db.selectSql({
             name: 'CBtest',
-            sql: 'SELECT * FROM MRM_BOOKS_BEAN WHERE CBCH LIKE "%' + numer + '%" or CBCMC LIKE "%' + numer + '%"'
+            sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH LIKE "%' + numer + '%" or YHMC LIKE "%' + numer + '%"'
         }, function(ret, err) {
             api.hideProgress();
-            console.log(JSON.stringify(ret))
             if (ret.status) {
                 if (ret.data != "") {
                     $("#serchList").empty();
                     $("#storingList").empty()
+                    db.executeSql({
+                        name: 'CBtest',
+                        sql: 'INSERT INTO MRM_HISTORYS_BEAN (LSLX,CXCS) VALUES ("抄表大户查询",\'' + numer + '\')'
+                    }, function(ret, err) {
+                        if (ret.status) {
+                            // alert( JSON.stringify( ret ) );
+                        } else {
+                            // alert( JSON.stringify( err ) );
+                        }
+                    });
 
-                    if (numer != "") {
-                        db.selectSql({
-                            name: 'CBtest',
-                            sql: `SELECT * FROM MRM_HISTORYS_BEAN where CXCS = "${numer}"`
-                        }, function(ret, err) {
-                            if (ret.status) {
-                                if (ret.data.length == 0) {
-                                    db.executeSql({
-                                        name: 'CBtest',
-                                        sql: 'INSERT INTO MRM_HISTORYS_BEAN (LSLX,CXCS) VALUES ("抄表册查询",\'' + numer + '\')'
-                                    }, function(ret, err) {
-                                        if (ret.status) {
-                                            // alert( JSON.stringify( ret ) );
-                                        } else {
-                                            // alert( JSON.stringify( err ) );
-                                        }
-                                    });
-                                }
-                            }
-                        });
-
-                    }
-
-                    console.log(JSON.stringify(ret.data))
                     var dataList = ret.data
                     handleAnnotData(dataList)
                 } else {
@@ -744,7 +714,7 @@
     function strongSerch() {
         db.selectSql({
             name: 'CBtest',
-            sql: 'select * from MRM_HISTORYS_BEAN where LSLX="抄表册查询" ORDER BY _id DESC limit 10'
+            sql: 'select * from MRM_HISTORYS_BEAN where LSLX="抄表大户查询" ORDER BY _id DESC limit 10'
         }, function(ret, err) {
             if (ret.status) {
                 var dataList = ret.data;
@@ -761,30 +731,29 @@
             api.closeWin();
         },
         'strongList': function() {
-
             var userCode = $(this).attr('data-id');
             var useryhbh = $(this).attr('data-yhbh');
-            var jsfun = 'show(' + userCode + ')'
-            api.execScript({
-                name: 'cbhome',
-                script: jsfun
+            api.openWin({
+                name: 'queryUserBig',
+                url: './MeterReading_details.html',
+                pageParam: {
+                    name: 'cbqueryUser',
+                    useryhbh: useryhbh
+                }
             });
-            api.closeWin({});
 
         },
         'strongClick': function() {
             api.showProgress({
                 style: 'default',
                 animationType: 'fade',
-                title: '加载中...',
+                title: '努力加载中...',
                 modal: false
             });
-            var numer = $(this).text();
-            $('#search-input').val(numer);
-            $('.aui-searchbar-clear-btn').show();
+            var numer = $(this).text()
             db.selectSql({
                 name: 'CBtest',
-                sql: 'SELECT * FROM MRM_BOOKS_BEAN WHERE CBCH LIKE "%' + numer + '%" or CBCMC LIKE "%' + numer + '%"'
+                sql: 'SELECT * FROM MRM_USERBIG_BEAN WHERE YHBH LIKE "%' + numer + '%" or YHMC LIKE "%' + numer + '%"'
             }, function(ret, err) {
                 api.hideProgress();
                 if (ret.status) {
@@ -792,7 +761,6 @@
                         $("#serchList").empty();
                         $("#storingList").empty()
                         var dataList = ret.data
-                        console.log(JSON.stringify(dataList))
                         handleAnnotData(dataList)
                     } else {
                         api.toast({

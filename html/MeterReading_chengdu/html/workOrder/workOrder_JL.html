@@ -80,7 +80,6 @@
             overflow: scroll;
             flex-direction: row;
             white-space: nowrap;
-            font-size: 0.7rem;
         }
 
         #center_dv2 {
@@ -138,7 +137,7 @@
 
         #query {
             width: 100%;
-            height: 60px;
+            height: 45px;
             display: flex;
             flex-direction: row;
             background-color: #fff;
@@ -150,14 +149,13 @@
             font-size: 18px;
             background-color: #fff;
             text-align: center;
-            line-height: 60px;
+            line-height: 45px;
             color: #2F7FF6;
         }
 
         #query_dv2 {
             flex: 1;
             background-color: #fff;
-            height: 60px;
         }
 
         #query_dv3 {
@@ -166,7 +164,7 @@
             font-size: 18px;
             background-color: #fff;
             text-align: center;
-            line-height: 60px;
+            line-height: 45px;
             color: #2F7FF6;
         }
 
@@ -207,7 +205,7 @@
                 <div class="aui-searchbar-input aui-border-radius" tapmode style="background-color: #F3F3F3;margin: 0;height:40px;line-height:40px;">
                     <i class="aui-iconfont aui-icon-search"></i>
                     <form action="">
-                        <input type="search" autocomplete="off" style="height: 40px;" placeholder="请输入搜索内容" id="search-input">
+                        <input type="search" autocomplete="off" style="height: 2rem;" placeholder="请输入搜索内容" id="search-input">
                     </form>
                     <div class="aui-searchbar-clear-btn">
                         <i class="aui-iconfont aui-icon-close"></i>
@@ -222,23 +220,6 @@
     <div id="center">
         <div id="center_dv1">
 
-            <div class="label">
-                <div><input class="aui-checkbox" type="checkbox" name="demo1"></div>
-                <div class="label_text">异常类型</div>
-            </div>
-            <div class="label">
-                <div><input class="aui-checkbox" type="checkbox" name="demo1"></div>
-                <div class="label_text">异常类型</div>
-            </div>
-            <div class="label">
-                <div><input class="aui-checkbox" type="checkbox" name="demo1"></div>
-                <div class="label_text">异常类型</div>
-            </div>
-            <div class="label">
-                <div><input class="aui-checkbox" type="checkbox" name="demo1"></div>
-                <div class="label_text">异常类型</div>
-            </div>
-            <div style=" clear:both; "></div>
         </div>
         <div id="center_dv2">
             <div class="center_dv">
@@ -275,9 +256,11 @@
     {{each datas value i}}
     <div class="label">
         <div>
-            {{if value.check=="1"}}
+            {{if value.id=="26"}} {{if value.check=="1"}}
+            <input class="aui-checkbox" type="checkbox" onclick="query(this)" checked="checked" name="demo" value="{{value.id}}"> {{else}}
+            <input class="aui-checkbox" type="checkbox" onclick="query(this)" name="demo" value="{{value.id}}"> {{/if}} {{else}} {{if value.check=="1"}}
             <input class="aui-checkbox" type="checkbox" checked="checked" name="demo" value="{{value.id}}"> {{else}}
-            <input class="aui-checkbox" type="checkbox" name="demo" value="{{value.id}}"> {{/if}}
+            <input class="aui-checkbox" type="checkbox" name="demo" value="{{value.id}}"> {{/if}} {{/if}}
         </div>
         <div class="label_text">{{value.name}}</div>
     </div>
@@ -305,8 +288,8 @@
     var uploadPhotoList = []; //需要上传的图片
     var workordertype = 0;
 
-    var onlineYCLXID = ["1", "2", "3", "4", "5", "6"]; //问题原因ID数据。
-    var onlineYCLXNAME = ["异常类型1", "异常类型2", "异常类型3", "异常类型4", "异常类型5", "异常类型6"]; //问题原因NAME数据。
+    var onlineYCLXID = []; //问题原因ID数据。
+    var onlineYCLXNAME = []; //问题原因NAME数据。
     var LoginName = "";
     var REMARK = "";
     var lon = ""; //经度
@@ -334,7 +317,14 @@
         }
     };
 
+    $("form").on("submit", function(event) { //这里可以写获取最外层容器的class名或者标签名等等
+        event.preventDefault();
+        event.stopPropagation();
+        queryUser();
+    });
+
     function queryUser() {
+        photoList = [];
         var yhbh = $("#search-input").val();
         if (yhbh == "") {
             api.toast({
@@ -358,49 +348,54 @@
                 queryWorkOrder();
             } else {
                 //没有离线数据，在线查询
-                var Parameter = {
-                    ClientId: api.deviceId,
-                    ClientName: api.deviceModel,
-                    OperatorId: $api.getStorage('cbOperatorId'),
-                    OperatorName: $api.getStorage('cbOperatorName'),
-                    Required: "yhbh=" + yhbh,
-                    Type: "138"
-                };
-                var body = {
-                    body: JSON.stringify({
-                        Method: 'R999',
-                        UserName: $api.getStorage("cbOperatorName"), //"01012"
-                        Password: $api.getStorage("cbPassword"), // "g6OuZomFp3E="
-                        SerialNo: dataTime(),
-                        Parameter: JSON.stringify(Parameter)
-                    })
-                };
-                fnPost('', body, 'application/json', false, function(ret, err) {
-                    if (ret) {
-                        if (ret.Status == 0) {
-                            var data = JSON.parse(ret.Data);
-                            if (data.length > 0) {
-                                userbean = data.data[0];
-                                YHBH = yhbh;
-                                queryWorkOrder();
+                if (api.connectionType != 'none') {
+                    var Parameter = {
+                        ClientId: api.deviceId,
+                        ClientName: api.deviceModel,
+                        OperatorId: $api.getStorage('cbOperatorId'),
+                        OperatorName: $api.getStorage('cbOperatorName'),
+                        Required: "YHBH=" + yhbh + "&YHMC=&YHDZ=&YHDH=&SBBH=&PAGECODE=1",
+                        Type: "138"
+                    };
+                    var body = {
+                        body: JSON.stringify({
+                            Method: 'R999',
+                            UserName: $api.getStorage("cbOperatorName"), //"01012"
+                            Password: $api.getStorage("cbPassword"), // "g6OuZomFp3E="
+                            SerialNo: dataTime(),
+                            Parameter: JSON.stringify(Parameter)
+                        })
+                    };
+                    fnPost('', body, 'application/json', false, function(ret, err) {
+                        if (ret) {
+                            if (ret.Status == 0) {
+                                var data = JSON.parse(ret.Data);
+                                if (data.length > 0) {
+                                    userbean = data[0];
+                                    YHBH = yhbh;
+                                    queryWorkOrder();
+                                } else {
+                                    api.toast({
+                                        msg: "未查找到对应用户！",
+                                        duration: 2000,
+                                        location: 'bottom'
+                                    });
+                                    YHBH = "";
+                                }
                             } else {
                                 api.toast({
-                                    msg: "未查找到对应用户！",
+                                    msg: ret.Message,
                                     duration: 2000,
                                     location: 'bottom'
                                 });
                                 YHBH = "";
                             }
-                        } else {
-                            api.toast({
-                                msg: ret.Message,
-                                duration: 2000,
-                                location: 'bottom'
-                            });
-                            YHBH = "";
                         }
-                    }
-                });
+                    });
+                } else {
+                    alert('网络异常，请检测网络是否正常');
+                    api.closeWin();
+                }
             }
         }
     }
@@ -483,7 +478,6 @@
                 });
             }
         }
-
         var datas = {
             datas: yclxList,
         }
@@ -507,6 +501,7 @@
                 var datas = {
                     datas: photoList
                 }
+
                 var str = template('photoList', datas);
 
                 $('#GDZP .img-item').remove();
@@ -566,53 +561,45 @@
         }
         pGetPicture(options, function(ret, err) {
             if (ret.status) {
-                var fs = api.require('fs');
-                fs.copyTo({
-                    oldPath: ret.imgList[0],
-                    newPath: 'fs://MeterReadingPicture'
-                }, function(ret2, err) {
-                    if (ret2.status) {
-                        var picName = ret.imgList[0].substring(ret.imgList[0].lastIndexOf("/") + 1);
-                        var url = api.fsDir + "/MeterReadingPicture/" + picName;
+                var picName = ret.imgList[0].substring(ret.imgList[0].lastIndexOf("/") + 1);
+                var url = ret.imgList[0];
 
-                        var year = Time("year"); //获取系统的年；
-                        var month = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
-                        var day = Time("day"); //获取系统日
-                        var hour = Time("hour"); //获取系统时间
-                        var minute = Time("minute"); //分
-                        var second = Time("second"); //秒
-                        var ZPMC = year + month + day + hour + minute + second + "_" + YHBH + ".jpg"
-                        var naviphoto = {
-                            "ID": "10001",
-                            "YHBH": YHBH,
-                            "ZPMC": ZPMC,
-                            "ZPLX": "6",
-                            "ZPLJ": url,
-                            "ZPJD": lon,
-                            "ZPWD": lat,
-                            "SFSC": "0",
-                            "REMARK": REMARK
-                        }
-                        var naviphotodata = db.executeSqlSync({
-                            name: 'CBtest',
-                            sql: "INSERT INTO MRM_WORKORDERPHOTOS_BEAN " +
-                                "(userName, ID, YHBH, ZPMC, ZPLJ, ZPLX, ZPJD, ZPWD, REMARK, SFSC) VALUES " +
-                                "('" + LoginName +
-                                "', '" + naviphoto.ID +
-                                "', '" + naviphoto.YHBH +
-                                "', '" + naviphoto.ZPMC +
-                                "', '" + naviphoto.ZPLJ +
-                                "', '" + naviphoto.ZPLX +
-                                "', '" + naviphoto.ZPJD +
-                                "', '" + naviphoto.ZPWD +
-                                "', '" + naviphoto.REMARK +
-                                "', '" + naviphoto.SFSC + "')"
-                        });
-                        if (naviphotodata.status) {
-                            queryPhoto();
-                        }
-                    }
+                var year = Time("year"); //获取系统的年；
+                var month = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
+                var day = Time("day"); //获取系统日
+                var hour = Time("hour"); //获取系统时间
+                var minute = Time("minute"); //分
+                var second = Time("second"); //秒
+                var ZPMC = year + month + day + hour + minute + second + "_" + YHBH + ".jpg"
+                var naviphoto = {
+                    "ID": "10001",
+                    "YHBH": YHBH,
+                    "ZPMC": ZPMC,
+                    "ZPLX": "6",
+                    "ZPLJ": url,
+                    "ZPJD": lon,
+                    "ZPWD": lat,
+                    "SFSC": "0",
+                    "REMARK": REMARK
+                }
+                var naviphotodata = db.executeSqlSync({
+                    name: 'CBtest',
+                    sql: "INSERT INTO MRM_WORKORDERPHOTOS_BEAN " +
+                        "(userName, ID, YHBH, ZPMC, ZPLJ, ZPLX, ZPJD, ZPWD, REMARK, SFSC) VALUES " +
+                        "('" + LoginName +
+                        "', '" + naviphoto.ID +
+                        "', '" + naviphoto.YHBH +
+                        "', '" + naviphoto.ZPMC +
+                        "', '" + naviphoto.ZPLJ +
+                        "', '" + naviphoto.ZPLX +
+                        "', '" + naviphoto.ZPJD +
+                        "', '" + naviphoto.ZPWD +
+                        "', '" + naviphoto.REMARK +
+                        "', '" + naviphoto.SFSC + "')"
                 });
+                if (naviphotodata.status) {
+                    queryPhoto();
+                }
             }
         });
     }
@@ -740,6 +727,9 @@
 
     //保存
     function baocun(num) {
+        photoindex = 0;
+        Records = [];
+        FileUrlArr = [];
         if (YHBH == "") {
             api.toast({
                 msg: '请输入用户编号，并搜索用户信息。',
@@ -749,7 +739,7 @@
             return;
         } else if (userbean == null || userbean == "") {
             api.toast({
-                msg: '当前用户编号为查找到对应的用户。',
+                msg: '当前用户编号未查找到对应的用户信息。',
                 duration: 2000,
                 location: 'bottom'
             });
@@ -769,8 +759,8 @@
                 duration: 2000,
                 location: 'bottom'
             });
-            $('#baocun').removeAttr("disabled"); //添加disabled属性
-            $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+            $('#baocun').removeAttr("disabled");
+            $('#shangchuan').removeAttr("disabled");
             return;
         }
 
@@ -780,8 +770,8 @@
                 duration: 2000,
                 location: 'bottom'
             });
-            $('#baocun').removeAttr("disabled"); //添加disabled属性
-            $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+            $('#baocun').removeAttr("disabled");
+            $('#shangchuan').removeAttr("disabled");
             return;
         }
         type = num;
@@ -793,8 +783,8 @@
                 duration: 2000,
                 location: 'bottom'
             });
-            $('#baocun').removeAttr("disabled"); //添加disabled属性
-            $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+            $('#baocun').removeAttr("disabled");
+            $('#shangchuan').removeAttr("disabled");
         } else {
             var date = new Date(); //实例一个时间对象；
             var year = Time("year"); //获取系统的年；
@@ -803,14 +793,16 @@
             var time = year + "-" + month + "-" + day
             if (workordertype == 0) {
                 //新增工单
-                var sql = "INSERT INTO MRM_WORKORDER_BEAN (userName, YHBH, YHMC, YHDZ, YYMS, BZ, SFSC) VALUES " +
+                var sql = "INSERT INTO MRM_WORKORDER_BEAN (userName, YHBH, YHMC, YHDZ, SBKJ, YYMS, BZ, SFSC) VALUES " +
                     "('" + LoginName +
                     "', '" + YHBH +
                     "', '" + userbean.YHMC +
                     "', '" + userbean.YHDZ +
+                    "', '" + userbean.KJ +
                     "', '" + YYMS +
                     "', '" + idstr +
                     "', '0')";
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -825,12 +817,12 @@
                     if (type == 2) {
                         shangchuan();
                     } else {
-                        $('#baocun').removeAttr("disabled"); //添加disabled属性
-                        $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                        $('#baocun').removeAttr("disabled");
+                        $('#shangchuan').removeAttr("disabled");
                     }
                 } else {
-                    $('#baocun').removeAttr("disabled"); //添加disabled属性
-                    $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                    $('#baocun').removeAttr("disabled");
+                    $('#shangchuan').removeAttr("disabled");
                 }
             } else {
                 //修改工单
@@ -838,6 +830,7 @@
                     'userName="' + LoginName + '",' +
                     'YYMS="' + YYMS + '",' +
                     'BZ="' + idstr + '" where YHBH="' + YHBH + '"';
+                //console.log(sql);
                 var workOrderData = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
@@ -852,12 +845,12 @@
                     if (type == 2) {
                         shangchuan();
                     } else {
-                        $('#baocun').removeAttr("disabled"); //添加disabled属性
-                        $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                        $('#baocun').removeAttr("disabled");
+                        $('#shangchuan').removeAttr("disabled");
                     }
                 } else {
-                    $('#baocun').removeAttr("disabled"); //添加disabled属性
-                    $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                    $('#baocun').removeAttr("disabled");
+                    $('#shangchuan').removeAttr("disabled");
                 }
             }
         }
@@ -906,19 +899,34 @@
                     workorderbean = workorderdata.data[0];
                     if (workorderbean.SFSC == "1") {
                         api.toast({
-                            msg: '异常记录已提交',
+                            msg: '异常记录已提交，若要进行修改操作，请先删除当前记录信息。',
                             duration: 3000,
                             location: 'bottom'
                         });
-                        $('#baocun').removeAttr("disabled"); //添加disabled属性
-                        $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                        $('#baocun').removeAttr("disabled");
+                        $('#shangchuan').removeAttr("disabled");
                     } else {
                         //上传数据
                         api.showProgress({
                             title: '上传数据中'
                         });
-                        var Required = 'YHBH=' + userbean.YHBH + '&YHMC=' + userbean.YHMC + '&YHDZ=' + userbean.YHDZ + '&SBKJ=' + userbean.KJ + '&LXRDH=' + userbean.YDDH + '&SBRDH=' + $api.getStorage('cbOperatorMoblie') + '&GZYY=' + workorderbean.BZ +
-                            '&BZ=' + workorderbean.YYMS;
+
+                        var yhbh = userbean.YHBH == null ? "" : userbean.YHBH;
+                        var yhmc = userbean.YHMC == null ? "" : userbean.YHMC;
+                        var yhdz = userbean.YHDZ == null ? "" : userbean.YHDZ;
+                        var sbkj = userbean.KJ == null ? "" : userbean.KJ;
+                        var yddh = userbean.YDDH == null ? "" : userbean.YDDH;
+                        var sbrdh = $api.getStorage('cbOperatorMoblie') == null ? "" : $api.getStorage('cbOperatorMoblie');
+                        var gzyy = workorderbean.BZ == null ? "" : workorderbean.BZ;
+                        var bz = workorderbean.YYMS == null ? "" : workorderbean.YYMS;
+                        var Required = 'YHBH=' + yhbh +
+                            '&YHMC=' + yhmc +
+                            '&YHDZ=' + yhdz +
+                            '&SBKJ=' + sbkj +
+                            '&LXRDH=' + yddh +
+                            '&SBRDH=' + sbrdh +
+                            '&GZYY=' + gzyy +
+                            '&BZ=' + bz;
                         var Parameter = {
                             "ClientId": api.deviceId,
                             "ClientName": api.deviceModel,
@@ -965,6 +973,11 @@
                                         name: 'CBtest',
                                         sql: 'update MRM_WORKORDERPHOTOS_BEAN set SFSC="1" where YHBH="' + workorderbean.YHBH + '" and userName="' + LoginName + '"'
                                     });
+                                    api.toast({
+                                        msg: '上传成功',
+                                        duration: 3000,
+                                        location: 'bottom'
+                                    });
                                 } else {
                                     //上传失败
                                     api.toast({
@@ -975,12 +988,12 @@
                                 }
                             } else {
                                 api.alert({
-                                    msg: JSON.stringify(err.msg)
+                                    msg: "上传失败，数据已保存到本地，可在数据上传界面手动上传。"
                                 });
                             }
                             api.hideProgress();
-                            $('#baocun').removeAttr("disabled"); //添加disabled属性
-                            $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                            $('#baocun').removeAttr("disabled");
+                            $('#shangchuan').removeAttr("disabled");
                             api.sendEvent({
                                 name: 'nweWorkOrderList'
                             });
@@ -992,96 +1005,133 @@
                         duration: 3000,
                         location: 'bottom'
                     });
-                    $('#baocun').removeAttr("disabled"); //添加disabled属性
-                    $('#shangchuan').removeAttr("disabled"); //添加disabled属性
+                    $('#baocun').removeAttr("disabled");
+                    $('#shangchuan').removeAttr("disabled");
                 }
             }
         }
     }
 
-    //上传图片
-    function uploadPhoto() {
-        var ret = db.selectSqlSync({
-            name: 'CBtest',
-            sql: 'select * from MRM_WORKORDERPHOTOS_BEAN where YHBH="' + YHBH + '" and SFSC="0" and userName="' + LoginName + '"'
-        });
-        if (ret.data) {
-            if (ret.data.length > 0) {
-                //有未上传的图片
-                api.showProgress({
-                    title: '上传数据中'
-                });
-                var photo = ret.data[0];
-
-                var Parameter = {
-                    "ClientId": api.deviceId,
-                    "ClientName": api.deviceModel,
-                    "OperatorId": $api.getStorage('cbOperatorId'),
-                    "OperatorName": $api.getStorage('cbOperatorName'),
-                    "Yhbh": photo.YHBH,
-                    "PhotoName": photo.ZPMC,
-                    "PhotoType": "4",
-                    "Longitude": photo.JD,
-                    "Latitude": photo.WD,
-                    "OrderNo": "",
-                    "Errtype": "",
-                    "Remark": "",
-                    "Type": "302",
-                    "PhotoInfo": ""
-                };
-
-                var FileUrlArr = [];
-                FileUrlArr.push(photo.ZPLJ);
-                api.ajax({
-                    url: $api.getStorage('cbapipath') + '/api/WaterMeters/Info',
-                    method: 'post',
-                    timeout: 60,
-                    data: {
-                        values: {
-                            Method: 'R999',
-                            UserName: $api.getStorage('cbOperatorName'), //"01012"
-                            Password: $api.getStorage('cbPassword'), // "g6OuZomFp3E="
-                            SerialNo: dataTime(),
-                            KeyCode: '', //营业
-                            Parameter: JSON.stringify(Parameter)
-                        },
-                        files: {
-                            file: FileUrlArr
-                        }
-                    }
-                }, function(ret, err) {
-                    if (ret) {
-                        if (ret.Status == 0) {
-                            var workOrderData = db.executeSqlSync({
-                                name: 'CBtest',
-                                sql: 'update MRM_WORKORDERPHOTOS_BEAN set SFSC="1" where YHBH="' + YHBH + '" and userName="' + LoginName + '"'
-                            });
-                            uploadPhoto();
-                        } else {
-                            //上传失败
-                            api.toast({
-                                msg: ret.Message,
-                                duration: 3000,
-                                location: 'bottom'
-                            });
-                            api.hideProgress();
-                            $('#baocun').removeAttr("disabled"); //移除disabled属性
-                            $('#shangchuan').removeAttr("disabled"); //移除disabled属性
-                        }
-                    } else {
-                        api.alert({
-                            msg: JSON.stringify(err.msg)
-                        });
-                        api.hideProgress();
-                        $('#baocun').removeAttr("disabled"); //移除disabled属性
-                        $('#shangchuan').removeAttr("disabled"); //移除disabled属性
-                    }
-                });
-            } else {
-                //没有未上传的图片
-                api.hideProgress();
-            }
-        }
+    function query(el) {
+        // if ($(el).is(':checked')) {
+        //     $(el).prop('checked', false);
+        //     var type = 0;
+        //     var yhbh = $("#search-input").val();
+        //     if (yhbh != null && yhbh != "") {
+        //         if (api.connectionType != 'none') {
+        //             //在线
+        //             var Parameter = {
+        //                 ClientId: api.deviceId,
+        //                 ClientName: api.deviceModel,
+        //                 OperatorId: $api.getStorage('cbOperatorId'),
+        //                 OperatorName: $api.getStorage('cbOperatorName'),
+        //                 Required: "YHBH=" + yhbh + "&YHMC=&YHDZ=&YHDH=&SBBH=&PAGECODE=1",
+        //                 Type: "138"
+        //             };
+        //             var body = {
+        //                 body: JSON.stringify({
+        //                     Method: 'R999',
+        //                     UserName: $api.getStorage("cbOperatorName"), //"01012"
+        //                     Password: $api.getStorage("cbPassword"), // "g6OuZomFp3E="
+        //                     SerialNo: dataTime(),
+        //                     Parameter: JSON.stringify(Parameter)
+        //                 })
+        //             };
+        //             fnPost('', body, 'application/json', false, function(ret, err) {
+        //                 if (ret) {
+        //                     if (ret.Status == 0) {
+        //                         var data = JSON.parse(ret.Data);
+        //                         if (data.length > 0) {
+        //                             if (Number(data[0].QFJE) > 0) {
+        //                                 //有欠费金额不允许选中
+        //                                 type = 1;
+        //                             } else {
+        //                                 type = 2;
+        //                             }
+        //                         } else {
+        //                             var userdata = db.selectSqlSync({
+        //                                 name: 'CBtest',
+        //                                 sql: 'select * from MRM_USER_BEAN where YHBH="' + yhbh + '" and userName="' + LoginName + '"'
+        //                             });
+        //                             if (userdata.data) {
+        //                                 if (userdata.data.length > 0) {
+        //                                     if (Number(userdata.data[0].QFJE) > 0) {
+        //                                         //有欠费金额不允许选中
+        //                                         type = 1;
+        //                                     } else {
+        //                                         type = 2;
+        //                                     }
+        //                                 }
+        //                             }
+        //                         }
+        //                     } else {
+        //                         api.toast({
+        //                             msg: ret.Message,
+        //                             duration: 2000,
+        //                             location: 'bottom'
+        //                         });
+        //                     }
+        //                 } else {
+        //
+        //                 }
+        //                 if (type == 0) {
+        //                     //失败
+        //                     $(el).prop('checked', false);
+        //                 } else if (type == 1) {
+        //                     //失败：有欠费金额
+        //                     $(el).prop('checked', false);
+        //                     api.toast({
+        //                         msg: '当前用户存在欠费，不能勾选该选项',
+        //                         duration: 2000,
+        //                         location: 'bottom'
+        //                     });
+        //                 } else if (type == 2) {
+        //                     //成功
+        //                     $(el).prop('checked', 'checked');
+        //                 }
+        //             });
+        //         } else {
+        //             //离线
+        //             var userdata = db.selectSqlSync({
+        //                 name: 'CBtest',
+        //                 sql: 'select * from MRM_USER_BEAN where YHBH="' + yhbh + '" and userName="' + LoginName + '"'
+        //             });
+        //             if (userdata.data) {
+        //                 if (userdata.data.length > 0) {
+        //                     if (Number(userdata.data[0].QFJE) > 0) {
+        //                         //有欠费金额不允许选中
+        //                         type = 1;
+        //                     } else {
+        //                         type = 2;
+        //                     }
+        //                 }
+        //             }
+        //             if (type == 0) {
+        //                 //失败
+        //                 $(el).prop('checked', false);
+        //             } else if (type == 1) {
+        //                 //失败：有欠费金额
+        //                 $(el).prop('checked', false);
+        //                 api.toast({
+        //                     msg: '当前用户存在欠费，不能勾选该选项',
+        //                     duration: 2000,
+        //                     location: 'bottom'
+        //                 });
+        //             } else if (type == 2) {
+        //                 //成功
+        //                 $(el).prop('checked', 'checked');
+        //             }
+        //         }
+        //     } else {
+        //         api.toast({
+        //             msg: '请输入用户编号',
+        //             duration: 2000,
+        //             location: 'bottom'
+        //         });
+        //     }
+        // } else {
+        //     //alert("未选中");
+        // }
     }
 
     var actionList = {

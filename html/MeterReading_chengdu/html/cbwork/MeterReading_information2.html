@@ -318,8 +318,8 @@
             <div class="dv_value" id="QD"></div>
         </div>
         <div class="dv">
-            <div>用户状态</div>
-            <div class="dv_value" id="YHZT"></div>
+            <div>水表编码</div>
+            <div class="dv_value" id="SBBM"></div>
         </div>
         <div class="dv">
             <div>近3期水量</div>
@@ -479,13 +479,23 @@
             <tr>
                 <td class="show_div_dv">序号</td>
                 <td class="show_div_dv">换表时间</td>
+                <td class="show_div_dv">旧表起度</td>
+                <td class="show_div_dv">旧表止度</td>
+                <td class="show_div_dv">旧表水量</td>
                 <td class="show_div_dv">新表起度</td>
+                <td class="show_div_dv">新表止度</td>
+                <td class="show_div_dv">新表水量</td>
             </tr>
             {{each datas value i}}
             <tr>
                 <td class="show_div_dv2">{{i+1}}</td>
                 <td class="show_div_dv2">{{value.REPLACEDTIME}}</td>
+                <td class="show_div_dv2">{{value.OLDBEGINSCALE}}</td>
+                <td class="show_div_dv2">{{value.OLDENDSCALE}}</td>
                 <td class="show_div_dv2">{{value.OLDAMOUNT}}</td>
+                <td class="show_div_dv2">{{value.NEWBEGINSCALE}}</td>
+                <td class="show_div_dv2">{{value.NEWENDSCALE}}</td>
+                <td class="show_div_dv2">{{value.NEWAMOUNT}}</td>
             </tr>
             {{/each}}
         </table>
@@ -535,6 +545,7 @@
                 dataList = ret.data[0];
                 handleAnnotData(ret.data[0]);
             } else {
+                console.log(JSON.stringify(err));
             }
         });
     }
@@ -576,6 +587,7 @@
                         }
 
                         var str = template('recentReaderList', datas);
+                        //console.log(JSON.stringify(str));
                         $('#center_bottom_dv2 div').remove();
                         $('#center_bottom_dv2').append(str);
                         fnReadyOpenWin();
@@ -644,6 +656,7 @@
                         }
 
                         var str = template('recentPayList', datas);
+                        //console.log(JSON.stringify(str));
                         $('#center_bottom_dv2 div').remove();
                         $('#center_bottom_dv2').append(str);
                         fnReadyOpenWin();
@@ -712,6 +725,7 @@
                         }
 
                         var str = template('arrearageInfoList', datas);
+                        //console.log(JSON.stringify(str));
                         $('#center_bottom_dv2 div').remove();
                         $('#center_bottom_dv2').append(str);
                         fnReadyOpenWin();
@@ -779,6 +793,7 @@
                         }
 
                         var str = template('meterChangeList', datas);
+                        //console.log(JSON.stringify(str));
                         $('#center_bottom_dv2 div').remove();
                         $('#center_bottom_dv2').append(str);
                         fnReadyOpenWin();
@@ -819,14 +834,11 @@
         $("#SBBH").text(dataList.SBBH);
         $("#KJ").text(dataList.KJ);
         $("#QD").text(dataList.QD);
-        if (dataList.BYXZT != "") {
-            $("#YHZT").text(dataList.CBZTTEXT);
-        } else {
-            $("#YHZT").text("正常");
-        }
+        $("#SBBM").text(dataList.SBBM);
         $("#JSYYSL").text(dataList.JSYYSL);
         $("#YDDH").html('<a href="tel:' + dataList.YDDH + '">' + dataList.YDDH + '</a>');
         $("#GDDH").html('<a href="tel:' + dataList.GDDH + '">' + dataList.GDDH + '</a>');
+        console.log(dataList.JSYYSL);
         if (dataList.JSYYSL != null && dataList.JSYYSL != 'null' && dataList.JSYYSL != "" && dataList.JSYYSL != " ") {
             var JSYYSL = dataList.JSYYSL;
             var JSYPJLs = JSYYSL.split("/");
