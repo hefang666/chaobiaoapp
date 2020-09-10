@@ -251,8 +251,33 @@
 
             }
         });
-
+        getPicSize();
     };
+
+    // 获取 拍照尺寸
+    function getPicSize(){
+      var headers = {};
+      headers["Content-Type"] = 'application/json';
+      headers["accept"] = 'text/plain';
+      headers.Authorization = $api.getStorage('loginInfo');
+      // var url = 'http://' + $api.getStorage('apiUrl') +"/api/services/app/Parameter/GetParameterByCode?Code=cameraScale";
+      var url = "http://192.168.10.33:8010/" +"/api/services/app/Parameter/GetParameterByCode?Code=cameraScale";
+      api.ajax({
+          url: url,
+          method: 'get',
+          // timeout: 15,
+          dataType: 'json',
+          headers: headers,
+          // traditional: true
+      }, function(ret, err) {
+        if(err){
+          $api.setStorage('cameraScale', 500);
+        }
+        if(ret){
+          $api.setStorage('cameraScale', ret.result);
+        }
+      });
+    }
 
     function signalrSet() {
         try {

@@ -39,7 +39,6 @@ function fnIntVue() {
             SBYXZT: "正常", //水表运行状态
             ZD: 0, //读数
             YL: 0, //用量
-            SJSL: 0, //实际水量
             JBYL: 0, //旧表用量
             SJBM: 0, //实际表码
             XBBH: "", //新表表号
@@ -61,8 +60,8 @@ function fnIntVue() {
             PhotoIndex: 0, //用于异常记录上传时，判断组装的图片数据是第几张图片
             Records: [], //图片信息组
             FileUrlArr: [], //主体路径组
-            QZFS: 0 //取值方式
 
+            isSummaryTable:{} // 返回 本地数据库查询结果 是否是主表 在保存时使用
         },
         computed: {
             UserDetails: function() { //用户详情数据
@@ -81,7 +80,7 @@ function fnIntVue() {
             },
             NeedDegrees: function() { //是否需要录入读数
                 if ((this.SLLRFS == 1 || this.SLLRFS == 3 || this.CLFS == 3 || this.BYXZT == " " || this.BYXZT == "") && this.UserDetails.CBBZ != "1") {
-                    if (this.SLLRFS == 2 && this.CLFS == 3 || this.BYXZT == 10 || this.BYXZT == 9) {
+                    if (this.SLLRFS == 2 && this.CLFS == 3) {
                         return false;
                     } else {
                         return true;
@@ -104,7 +103,7 @@ function fnIntVue() {
                 }
             },
             NeedHBRQ: function() { //是否需要录入换表日期
-                if (this.CLFS == 3 && this.UserDetails.CBBZ != "1") {
+                if ((this.UserDetails.SCLRFS == 2 || this.CLFS == 3) && this.UserDetails.CBBZ != "1") {
                     return true;
                 } else {
                     return false;
@@ -124,7 +123,7 @@ function fnIntVue() {
                     return false;
                 }
             },
-            hasChanged() { //判断双向绑定的数据是否发生了改变
+            hasChanged: function() { //判断双向绑定的数据是否发生了改变
                 if (this.PATH != this.UserDetails.PATH || this.XBBH != this.UserDetails.XBBH || this.BYXZT != this.UserDetails.BYXZT || this.SBYXZT != this.UserDetails.SBYXZT || this.ZD != this.UserDetails.ZD || this.YL != this.UserDetails.YL || this.SJBM != this.UserDetails.SJBM || this.ImgData.length != 0) {
                     return true;
                 } else {
@@ -157,7 +156,7 @@ function fnIntVue() {
                 }
             },
             showHBRQ: function() { //是否显示换表
-                if (this.CLFS == 3 && this.SLLRFS == 2) {
+                if ((this.UserDetails.SCLRFS == 2 && this.SLLRFS == 2) || (this.CLFS == 3 && this.SLLRFS == 2)) {
                     return true;
                 } else {
                     return false;
@@ -208,7 +207,7 @@ function fnIntVue() {
                 }
                 return false;
             },
-            hasMeterLocationImg() { //是否添加了表位图片
+            hasMeterLocationImg: function() { //是否添加了表位图片
                 for (var i = 0; i < this.ImgData.length; i++) {
                     if (this.ImgData[i].data.NotLoction != "0") {
                         return true;
@@ -226,7 +225,7 @@ function fnIntVue() {
                         this.ZD = val.ZD;
                         this.YL = val.YL;
                         this.XBBH = val.XBBH;
-                        if (this.CLFS == 3) {
+                        if (val.ZHHBRQ == null || val.ZHHBRQ == "") {
                             var year = Time("year"); //获取系统的年；
                             var month = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
                             var day = Time("day"); //获取系统日
@@ -279,9 +278,11 @@ function fnIntVue() {
             },
             BYXZT: {
                 handler: function(val, oldVal) {
-                    if ((this.SLLRFS == 2 && this.UserDetails.CBBZ != "1") || (this.BYXZT == 10 && this.UserDetails.CBBZ != "1") || (this.BYXZT == 9 && this.UserDetails.CBBZ != "1")) {
+                    if (this.SLLRFS == 2 && this.UserDetails.CBBZ != "1") {
                         this.resetValue();
-                        this.calculateYL();
+                        if (this.CLFS != 3) {
+                            this.calculateYL();
+                        }
                     } else if (this.UserDetails.CBBZ != "1") {
                         this.resetValue();
                     }
@@ -312,59 +313,40 @@ function fnIntVue() {
             }
         },
         methods: {
-            back() { //返回上一个页面
+            back: function() { //返回上一个页面
                 _this = this;
                 var backWinName = "抄表列表";
                 if (this.FromPage == "cbqueryUser") {
                     backWinName = "用户详情";
                 }
                 if (this.hasChanged && this.UserDetails.CBBZ != "1") {
-                    vant.Dialog.confirm({
-                            title: '提示',
-                            message: '当前用户数据尚未保存，是否回到' + backWinName + '？',
-                        })
-                        .then(function() {
-                            _this.clearImgData();
-                            _this.closeWin();
-                        })
-                        .catch(function() {
-                            return
-                        });
+                    // vant.Dialog.confirm({
+                    //         title: '提示',
+                    //         message: '当前用户数据尚未保存，是否回到' + backWinName + '？',
+                    //     })
+                    //     .then(function() {
+                    //         _this.clearImgData();
+                    //         _this.closeWin();
+                    //     })
+                    //     .catch(function() {
+                    //         return
+                    //     });
+                    api.confirm({
+                        title: '提示',
+                        msg: '当前用户数据尚未保存，是否回到' + backWinName + '？',
+                        buttons: ['取消', '确定']
+                    }, function(ret, err){
+                        var index = ret.buttonIndex;
+                        if( index==2 ){
+                           _this.clearImgData();
+                           _this.closeWin();
+                        }else{return}
+                    });
                 } else {
                     this.closeWin();
                 }
             },
-            CodeScanning() {
-                var _this = this;
-                var FNScanner = api.require('FNScanner');
-                FNScanner.open({
-                    autorotation: true
-                }, function(ret, err) {
-                    if (ret) {
-                        if (ret.eventType == 'success') {
-                            var yhbh = ret.content;
-                            for (var i = 0; i < _this.UserList.length; i++) {
-                                if (_this.UserList[i].YHBH == yhbh) {
-                                    _this.UserNumber = i;
-                                    return;
-                                }
-                            }
-                            api.toast({
-                                msg: '当前抄表册没有对应用户信息！',
-                                duration: 2000,
-                                location: 'bottom'
-                            });
-                        }
-                    } else {
-                        api.toast({
-                            msg: 'err.msg',
-                            duration: 2000,
-                            location: 'bottom'
-                        });
-                    }
-                });
-            },
-            closeWin() { //关闭当前页面并刷新抄表列表页面
+            closeWin: function() { //关闭当前页面并刷新抄表列表页面
                 if (api.pageParam.name == "MeterReading_userList") {
                     var jsfun = 'show();';
                     api.execScript({
@@ -374,7 +356,7 @@ function fnIntVue() {
                 };
                 api.closeWin();
             },
-            clearImgData() { //清除图片数据
+            clearImgData: function() { //清除图片数据
                 for (var i = 0; i < _this.ImgData.length; i++) {
                     var path = _this.ImgData[i].path;
                     var zpmc = _this.ImgData[i].data.zpmc;
@@ -388,46 +370,53 @@ function fnIntVue() {
                 };
                 _this.ImgData = [];
             },
-            resetValue() { //切换状态 清空数据
+            resetValue: function() { //切换状态 清空数据
                 this.YL = "0";
                 this.ZD = "0";
                 this.SJBM = "";
                 this.XBBH = "";
-                if (this.CLFS == 3) {
+                if (this.UserDetails.ZHHBRQ == null || this.UserDetails.ZHHBRQ == "") {
                     var year = Time("year"); //获取系统的年；
                     var month = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
                     var day = Time("day"); //获取系统日
                     this.HBRQ = year + '-' + month + '-' + day;
                 } else {
-                    this.HBRQ = this.UserDetails.ZHHBRQ;
+                    this.HBRQ = "";
                 }
                 this.XBQD = "0";
                 this.XBZD = "0";
             },
-            isEmptyObject(obj) { //判断是否为空对象
+            isEmptyObject: function(obj) { //判断是否为空对象
                 for (var key in obj) {
                     return false
                 };
                 return true
             },
-            clearObjectSpace(obj) { //清除空格
-                Object.keys(obj).forEach(function(key) {　　 // 可进行逻辑判断，或者重新赋值
+            clearObjectSpace: function(obj) { //清除空格
+
+                // Object.keys(obj).forEach(function(key) {　　 // 可进行逻辑判断，或者重新赋值
+                    // var item = obj[key];
+                    // if (typeof(item) == "string") {
+                    //     obj[key] = item.replace(/\s/g, "");
+                    // }
+                // })
+                for(var key in obj) {      // 可进行逻辑判断，或者重新赋值
                     var item = obj[key];
                     if (typeof(item) == "string") {
                         obj[key] = item.replace(/\s/g, "");
                     }
-                })
+                }
                 return obj;
             },
-            initData() { //初始化获取用户数据
+            initData: function() { //初始化获取用户数据
                 this.getUserData();
                 this.getImgType();
                 this.setXuChaoUser();
             },
-            getUserData() { //获取用户数据
+            getUserData: function() { //获取用户数据
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'select * from MRM_DEPLOYS_BEAN where CODE in ("MRM_COMPARED_INCREASE_VALUE","MRM_COMPARED_AMOUNT","MR_SET_FLOATING_VALUE","BL_MIX_RECKONTYPE") and userName="' + this.LoginName + '"'
+                    sql: 'select * from MRM_DEPLOYS_BEAN where CODE in ("MRM_COMPARED_INCREASE_VALUE","MRM_COMPARED_AMOUNT","MR_SET_FLOATING_VALUE") and userName="' + this.LoginName + '"'
                 });
                 if (ret.status) {
                     if (ret.data.length > 0) {
@@ -442,9 +431,6 @@ function fnIntVue() {
                                 //alert("水量异常判断方式：" + ret.data[i].VALUE);
                                 this.YCPDFS = ret.data[i].VALUE;
                             }
-                            if (ret.data[i].CODE == "BL_MIX_RECKONTYPE") { //水量异常判断方式
-                                this.QZFS = ret.data[i].VALUE;
-                            }
                         }
                     }
                 }
@@ -457,31 +443,31 @@ function fnIntVue() {
                 if (this.FromPage == "MeterReading_userList") { //抄表列表页面点击进入
                     switch (true) {
                         case userState == "all" || userState == "Duplicate" || userState == "ContinuedCopy": //全部 和 重抄 ，续抄
-                            sql = sql = `SELECT * FROM MRM_USER_BEAN WHERE CBCH=${cbch} and ZXBLX!="2" and userName='${loginname}' ORDER BY CBXH`;
+                            sql = sql = 'SELECT * FROM MRM_USER_BEAN WHERE CBCH="' + cbch + '" and userName="' + loginname +  '" ORDER BY CBXH';
                             break;
                         case userState == "NotCopied": //未抄
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" and CBBZ=0 and userName='${loginname}' ORDER BY CBXH`;
+                            sql = 'select * from MRM_USER_BEAN where CBCH="' + cbch + '" and CBBZ="0" and userName="' + loginname + '" ORDER BY CBXH';
                             break;
                             // case userState == "Immeasurable": //无量
                             //     sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and CBBZ=1 and YL="0" ORDER BY CBXH`;
                             //     break;
                         case userState == "SLYC": //水量异常
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" AND CBBZ = '1' AND SLZT != '0' and userName='${loginname}' ORDER BY CBXH`;
+                            sql = 'select * from MRM_USER_BEAN where CBCH="' + cbch + '" AND CBBZ = "1" AND SLZT != "0" and userName="' + loginname + '" ORDER BY CBXH';
                             break;
                         default:
-                            sql = `select * from MRM_USER_BEAN where CBCH=${cbch} and ZXBLX!="2" AND CBBZ = '1' AND BYXZT = ${userState} and userName='${loginname}' ORDER BY CBXH`;
+                            sql = 'select * from MRM_USER_BEAN where CBCH="' + cbch + '" AND CBBZ = "1" AND BYXZT ="' + userState + '" and userName="' + loginname + '" ORDER BY CBXH';
                             break;
                     }
                 } else if (this.FromPage == 1) { //漏抄点击进入
                     if (api.pageParam.chCode == "") {
-                        sql = 'SELECT * FROM MRM_USER_BEAN WHERE YHBH!=" " and ZXBLX!="2" and CBBZ="0" and userName="' + loginname + '" ORDER BY CBCH,CBXH';
+                        sql = 'SELECT * FROM MRM_USER_BEAN WHERE YHBH!=" " and CBBZ="0" and userName="' + loginname + '" ORDER BY CBCH,CBXH';
                     } else {
                         var louchaoCode = api.pageParam.chCode;
                         var codeList = louchaoCode.join(",");
-                        sql = `SELECT * FROM MRM_USER_BEAN WHERE CBCH IN (${codeList}) and ZXBLX!="2" AND CBBZ="0" and userName='${loginname}' ORDER BY CBCH,CBXH`;
+                        sql = 'SELECT * FROM MRM_USER_BEAN WHERE CBCH IN ("' + codeList + '") AND CBBZ="0" and userName="' + loginname + '" ORDER BY CBCH,CBXH';
                     }
                 } else if (this.FromPage == "cbqueryUser") {
-                    sql = 'SELECT * FROM MRM_USER_BEAN WHERE CBCH="' + cbch + '" and ZXBLX!="2" and userName="' + loginname + '" ORDER BY CBXH'
+                    sql = 'SELECT * FROM MRM_USER_BEAN WHERE CBCH="' + cbch + '" and userName="' + loginname + '" ORDER BY CBXH'
                 }
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
@@ -489,23 +475,30 @@ function fnIntVue() {
                 });
                 this.UserList = ret.data;
                 if (this.UserList.length == 0 || this.UserList == '') {
-                    vant.Dialog.alert({
-                        title: "提示",
-                        message: "暂无抄表数据请前往下载"
-                    }).then(() => {
+                    // vant.Dialog.alert({
+                    //     title: "提示",
+                    //     message: "暂无抄表数据请前往下载"
+                    // }).then(function(){
+                    //     api.closeWin({});
+                    // })
+
+                    api.alert({
+                        title: '提示',
+                        msg: '暂无抄表数据请前往下载',
+                    }, function(ret, err) {
                         api.closeWin({});
-                    })
+                    });
                 }
-                var UserNumber = this.UserList.findIndex(function(item) {
+                var UserNumber = this.UserList.findIndexNew(function(item){
                     return item.YHBH == _this.YHBH;
-                });
+                })
                 if (UserNumber == -1) {
                     this.UserNumber = 0;
                 } else {
                     this.UserNumber = UserNumber;
                 }
             },
-            getImgType() { //获取图片类型数据
+            getImgType: function() { //获取图片类型数据
                 _this = this;
                 db.selectSql({
                     name: 'CBtest',
@@ -524,13 +517,13 @@ function fnIntVue() {
                     }
                 });
             },
-            setXuChaoUser() { //设置当前抄表册续抄用户
+            setXuChaoUser: function() { //设置当前抄表册续抄用户
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
                     sql: 'UPDATE MRM_BOOKS_BEAN SET XCYH="' + this.YHBH + '" WHERE CBCH="' + this.cbch + '" and userName="' + this.LoginName + '"'
                 });
             },
-            getMemorandum() { //获取备忘录
+            getMemorandum: function() { //获取备忘录
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
                     sql: 'select * from MRM_THE_MEMO_BEAN2 where YHBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
@@ -551,38 +544,55 @@ function fnIntVue() {
                     this.Memorandum = [];
                 }
             },
-            openMemorandum() { //提示备忘录信息
+            openMemorandum: function() { //提示备忘录信息
                 var text = this.Memorandum.join("\n");
-                vant.Dialog.alert({
-                    title: "备忘录",
-                    message: text
+                // vant.Dialog.alert({
+                //     title: "备忘录",
+                //     message: text
+                // });
+                api.alert({
+                    title: '备忘录',
+                    msg: text,
+                }, function(ret, err) {
                 });
             },
-            openDetails() { //用户信息区域向左滑动打开用户详情页
+            openDetails: function() { //用户信息区域向左滑动打开用户详情页
                 api.openWin({
                     name: 'MeterReading_information2',
                     url: './MeterReading_information2.html',
                     pageParam: this.UserDetails
                 });
             },
-            turnToNextOrPrev(turnFun) {
+            turnToNextOrPrev: function(turnFun) {
                 if (this.hasChanged && this.UserDetails.CBBZ != "1") {
-                    vant.Dialog.confirm({
-                            title: '提示',
-                            message: '当前用户数据尚未保存，是否跳转？',
-                        })
-                        .then(function() {
-                            _this.clearImgData();
-                            turnFun();
-                        })
-                        .catch(function() {
-                            return
-                        });
+                    // vant.Dialog.confirm({
+                    //         title: '提示',
+                    //         message: '当前用户数据尚未保存，是否跳转？',
+                    //     })
+                    //     .then(function() {
+                    //         _this.clearImgData();
+                    //         turnFun();
+                    //     })
+                    //     .catch(function() {
+                    //         return
+                    //     });
+
+                    api.confirm({
+                        title: '提示',
+                        msg: '当前用户数据尚未保存，是否跳转？',
+                        buttons: ['取消', '确定']
+                    }, function(ret, err){
+                        var index = ret.buttonIndex;
+                        if( index==2 ){
+                           _this.clearImgData();
+                           turnFun();
+                        }else{return}
+                    });
                 } else {
                     turnFun();
                 }
             },
-            previousHousehold() { //上一户
+            previousHousehold: function() { //上一户
                 if (this.UserNumber == 0) {
                     api.toast({
                         msg: '没有上一户了',
@@ -594,7 +604,7 @@ function fnIntVue() {
                     this.UserNumber--;
                 }
             },
-            nextHousehold() { //下一户
+            nextHousehold: function() { //下一户
                 if (this.UserNumber == (this.UserList.length - 1)) {
                     api.toast({
                         msg: '没有下一户了',
@@ -606,7 +616,7 @@ function fnIntVue() {
                     this.UserNumber++;
                 }
             },
-            viewLastMonthPhoto() { //查看上月照片
+            viewLastMonthPhoto: function() { //查看上月照片
                 if (api.connectionType != 'none') {
                     this.LoadOrNot = 1
                     api.showProgress({
@@ -649,7 +659,7 @@ function fnIntVue() {
                                     imgData = JSON.parse(ret.Data);
                                 };
                                 if (imgData.length > 0) {
-                                    var images = imgData.map((item) => {
+                                    var images = imgData.map(function(item) {
                                         //  return $api.getStorage('cbapipath') + item.URL;  //开发环境是抄表接口地址
                                         return apiUrl + item.URL; //生产环境是云平台接口地址
                                     });
@@ -687,7 +697,7 @@ function fnIntVue() {
                     vant.Toast("未连接网络,无法查看上月图片");
                 }
             },
-            photograph() { // 抄表拍照图片
+            photograph: function() { // 抄表拍照图片
                 _this = this;
                 gpsmodel.gpsstate(function(ret) {
                     if (ret.gps == true) {
@@ -702,7 +712,8 @@ function fnIntVue() {
                     }
                 });
             },
-            getCamera(id, name, state) { //拍照以及添加水印和经纬度
+            //拍照以及添加水印和经纬度
+            getCamera: function(id, name, state) {
                 var _this = this;
                 var NotLoction = state ? 1 : 0;
                 // if (state == 0) {
@@ -713,20 +724,19 @@ function fnIntVue() {
                 var options = {
                     type: 'camera',
                     waterMark: true,
-                    from: 'cb',
+                    from:'cb',
                     waterMarkData: {
                         code: _this.UserDetails.YHBH,
                         picType: state == 0 ? name : ""
                     }
                 }
                 pGetPicture(options, function(ret, err) {
-                    if (err) {
-                        alert("拍照失败！请重试");
-                        return false;
+                    if(err){
+                      alert("拍照失败！请重试");
+                      return false;
                     }
                     if (ret.status) {
                         // var currentImg = ret.imgList[0];
-                        //alert("拍照成功，图片数：" + ret.imgList.length);
                         var item = ret.imgList[0];
                         var cbch = _this.UserDetails.CBCH;
                         var yhbh = _this.UserDetails.YHBH;
@@ -735,18 +745,20 @@ function fnIntVue() {
 
                         var lon = ""; //经度
                         var lat = ""; //维度
-                        //alert("获取经纬度");
                         pGetLocation(function(ret, err) {
+                            if(err) {
+                              alert("拍照失败！请重试");
+                              return false;
+                            }
                             if (ret.status) {
-                                //alert("获取成功：" + ret.lon + "," + ret.lat);
                                 lon = ret.lon;
                                 lat = ret.lat;
                                 saveImgDetail(lon, lat)
+
                             } else {
-                                //alert("获取失败");
                                 var jwd = _this.UserDetails.JWD;
                                 if (jwd != null && jwd != "null" && jwd != "" && jwd != " ") {
-                                    var strs = jwd.split(",");
+                                    var strs = userbean.JWD.split(",");
                                     lon = strs[0];
                                     lat = strs[1];
                                 } else {
@@ -756,43 +768,42 @@ function fnIntVue() {
                                 saveImgDetail(lon, lat)
                             }
                             // 拍照成功后根据定位的信息 保存图片信息
-                            function saveImgDetail(lon, lat) {
-                                var img = {
-                                    path: zplj,
-                                    isAppend: false,
-                                    data: {
-                                        cbch: cbch,
-                                        yhbh: yhbh,
-                                        zpmc: zpmc,
-                                        zplj: zplj,
-                                        id: id,
-                                        name: name,
-                                        lon: lon,
-                                        lat: lat,
-                                        time: dataTime(),
-                                        NotLoction: NotLoction
-                                    }
-                                };
-                                if (state == 0) {
-                                    if (_this.UserDetails.CBBZ == "1") {
-                                        img.isAppend = true;
-                                    }
-                                    _this.ImgData.push(img);
-                                    //alert("存入图片数组");
-                                    setTimeout(function() {
-                                        var ele = document.getElementById('flex-vertical');
-                                        ele.scrollTop = ele.clientHeight;
-                                    }, 50);
-                                } else {
-                                    _this.PATH = zplj;
-                                    _this.ImgData.push(img);
-                                }
+                            function saveImgDetail (lon, lat) {
+                              var img = {
+                                  path: zplj,
+                                  isAppend: false,
+                                  data: {
+                                      cbch: cbch,
+                                      yhbh: yhbh,
+                                      zpmc: zpmc,
+                                      zplj: zplj,
+                                      id: id,
+                                      name: name,
+                                      lon: lon,
+                                      lat: lat,
+                                      time: dataTime(),
+                                      NotLoction: NotLoction
+                                  }
+                              };
+                              if (state == 0) {
+                                  if (_this.UserDetails.CBBZ == "1") {
+                                      img.isAppend = true;
+                                  }
+                                  _this.ImgData.push(img);
+                                  setTimeout(function() {
+                                      var ele = document.getElementById('flex-vertical');
+                                      ele.scrollTop = ele.clientHeight;
+                                  }, 50);
+                              } else {
+                                  _this.PATH = zplj;
+                                  _this.ImgData.push(img);
+                              }
                             }
                         });
                     }
                 });
             },
-            insertPhotoIntoDB() { //保存时将图片添加到本地数据库中
+            insertPhotoIntoDB: function() { //保存时将图片添加到本地数据库中
                 for (var i = 0; i < this.ImgData.length; i++) {
                     var item = this.ImgData[i];
                     var photoData = item.data;
@@ -821,7 +832,7 @@ function fnIntVue() {
                     }
                 }
             },
-            getImgData() { //获取本地数据库已保存的图片
+            getImgData: function() { //获取本地数据库已保存的图片
                 this.ImgData = [];
                 _this = this;
                 db.selectSql({
@@ -854,13 +865,13 @@ function fnIntVue() {
                     }
                 });
             },
-            imgPreView(path, index) { //图片预览
+            imgPreView: function(path, index) { //图片预览
                 var images = this.ImgData.map(function(item) {
                     return item.path;
                 });
                 pBrowserPicture(index, images);
             },
-            deleteImg(index) { // 图片删除
+            deleteImg: function(index) { // 图片删除
                 var path = this.ImgData[index].path;
                 var zpmc = this.ImgData[index].data.zpmc;
                 _this = this;
@@ -903,36 +914,38 @@ function fnIntVue() {
                             });
                         }
                     } else {
-                        vant.Dialog.alert({
-                            title: "提示",
-                            message: "无法进行抄表操作,请先打开gps"
-                        }).then(() => {
-
-                        })
+                        api.alert({
+                            title: '提示',
+                            msg: '无法进行抄表操作,请先打开gps',
+                        }, function(ret, err) {
+                        });
                     }
                 });
 
             },
-            waterLocationImg() { //表位图片
+            waterLocationImg: function() { //表位图片
                 var _this = this;
                 if ((_this.PATH == ' ' || _this.PATH == '' || _this.PATH == 'null' || _this.PATH == null || _this.PATH.length == 0) && this.UserDetails.CBBZ != "1") {
                     gpsmodel.gpsstate(function(ret) {
                         if (ret.gps == true) {
-                            vant.Dialog.confirm({
+                            var dialog=new auiDialog();
+                            // 原生
+                            api.confirm({
                                 title: '提示',
-                                message: '是否上传表位照片'
-                            }).then(() => {
-                                _this.getCamera(" ", " ", 1);
-                            }).catch(() => {
-
+                                msg: '是否上传表位照片',
+                                buttons: ['取消', '确定']
+                            }, function(ret, err){
+                                var index = ret.buttonIndex;
+                                if( index==2 ){
+                                  _this.getCamera(" ", " ", 1);
+                                }else{}
                             });
                         } else {
-                            vant.Dialog.alert({
-                                title: "提示",
-                                message: "无法进行抄表操作,请先打开gps"
-                            }).then(() => {
-
-                            })
+                            api.alert({
+                                title: '提示',
+                                msg: '无法进行抄表操作,请先打开gps',
+                            }, function(ret, err) {
+                            });
                         }
                     });
                 } else {
@@ -954,7 +967,7 @@ function fnIntVue() {
                     }
                 }
             },
-            selectMeterStates() { //选择水表状态
+            selectMeterStates: function() { //选择水表状态
                 _this = this;
                 gpsmodel.gpsstate(function(ret) {
                     if (ret.gps == true) {
@@ -966,7 +979,7 @@ function fnIntVue() {
                                     x: 0,
                                     y: 0,
                                     w: 'auto',
-                                    h: 'auto'
+                                    h: 'auto',
                                 },
                                 pageParam: {
                                     name: 'test'
@@ -978,16 +991,22 @@ function fnIntVue() {
                             });
                         }
                     } else {
-                        vant.Dialog.alert({
-                            title: "提示",
-                            message: "无法进行抄表操作,请先打开gps"
-                        }).then(() => {
+                        // vant.Dialog.alert({
+                        //     title: "提示",
+                        //     message: "无法进行抄表操作,请先打开gps"
+                        // }).then(function() {
+                        //
+                        // })
 
-                        })
+                        api.alert({
+                            title: '提示',
+                            msg: '无法进行抄表操作,请先打开gps',
+                        }, function(ret, err) {
+                        });
                     }
                 });
             },
-            changeDegrees(noToast) { //点击读数，切换键盘输入为录入读数
+            changeDegrees: function(noToast) { //点击读数，切换键盘输入为录入读数
                 // 自抄和正常
                 if (this.UserDetails.CBBZ != "1") {
                     if (this.NeedDegrees) {
@@ -1006,7 +1025,7 @@ function fnIntVue() {
                     }
                 }
             },
-            changeConsumption(noToast) { //点击用量，切换键盘输入为录入用量
+            changeConsumption: function(noToast) { //点击用量，切换键盘输入为录入用量
                 //故障：表糊、表停、倒装、表坏、其他、
                 //特殊表位：堆埋、车压、水淹、闭门围挡、其他
                 if (this.UserDetails.CBBZ != "1") {
@@ -1026,7 +1045,7 @@ function fnIntVue() {
                     }
                 }
             },
-            changeSJBM(noToast) { //点击实际表码，切换键盘输入为录入实际表码
+            changeSJBM: function(noToast) { //点击实际表码，切换键盘输入为录入实际表码
                 //故障：倒装
                 //换表
                 //无量：多录多抄、其他
@@ -1047,7 +1066,7 @@ function fnIntVue() {
                     }
                 }
             },
-            changeNewMeterNo(noToast) { //点击新表表号，切换键盘输入为新表表号
+            changeNewMeterNo: function(noToast) { //点击新表表号，切换键盘输入为新表表号
                 //换表-换表
                 if (this.UserDetails.CBBZ != "1") {
                     if (this.NeedXBBH) {
@@ -1065,7 +1084,7 @@ function fnIntVue() {
                     }
                 }
             },
-            changeXBQD(noToast) { //点击新表起度，切换键盘输入为新表起度
+            changeXBQD: function(noToast) { //点击新表起度，切换键盘输入为新表起度
                 //换表-换表
                 if (this.UserDetails.CBBZ != "1") {
                     if (this.NeedXBBH) {
@@ -1083,7 +1102,7 @@ function fnIntVue() {
                     }
                 }
             },
-            changeXBZD(noToast) { //点击新表止度，切换键盘输入为新表止度
+            changeXBZD: function(noToast) { //点击新表止度，切换键盘输入为新表止度
                 //换表-换表
                 if (this.UserDetails.CBBZ != "1") {
                     if (this.NeedXBBH) {
@@ -1101,7 +1120,7 @@ function fnIntVue() {
                     }
                 }
             },
-            ScanCode() { //扫码识别水表表号
+            ScanCode: function() { //扫码识别水表表号
                 if (this.UserDetails.CBBZ != "1") {
                     FNScanner.open({
                         rect: {
@@ -1117,7 +1136,7 @@ function fnIntVue() {
                                 size: 13,
                             }
                         }
-                    }, (ret, err) => {
+                    }, function(ret, err) {
                         if (ret.eventType == 'success') {
                             var content = ret.content;
                             this.XBBH = content;
@@ -1129,7 +1148,7 @@ function fnIntVue() {
                     });
                 }
             },
-            resetInputActive() { //重置读数、实际表码、用量的输入框状态
+            resetInputActive: function() { //重置读数、实际表码、用量的输入框状态
                 this.editDegrees = false; //编辑读数
                 this.editConsumption = false; //编辑用量
                 this.editSJBM = false; //编辑实际表码
@@ -1150,7 +1169,7 @@ function fnIntVue() {
                     this.editXBZD = true;
                 }
             },
-            openLight() { //打开/关闭手电筒
+            openLight: function() { //打开/关闭手电筒
                 this.showLight = !this.showLight;
                 if (this.showLight) {
                     DVTorch.open({});
@@ -1158,7 +1177,7 @@ function fnIntVue() {
                     DVTorch.close({});
                 }
             },
-            applyWorkOrder() { // 发起异常记录
+            applyWorkOrder: function() { // 发起异常记录
                 _this = this;
                 api.openWin({
                     name: 'workOrder',
@@ -1206,7 +1225,7 @@ function fnIntVue() {
                 //     }
                 // });
             },
-            contactsPhone() { //点击键盘上的更多
+            contactsPhone: function() { //点击键盘上的更多
                 // 电话拨打和短信
                 var telponeNumer = this.UserDetails.YDDH;
                 var userCode = this.UserDetails.YHBH;
@@ -1218,7 +1237,7 @@ function fnIntVue() {
                         fontNormalColor: '#FF5A5A5A',
                         fontPressColor: '#FF2F81F6'
                     },
-                    buttons: ['联系用户', '更新表位', '修改已抄', '导航', '查看上月图片']
+                    buttons: ['联系用户', '更新表位', '修改已抄', '备忘录', '导航', '查看上月图片']
                 }, function(ret, err) {
                     if (ret) {
                         var index = ret.buttonIndex;
@@ -1242,12 +1261,18 @@ function fnIntVue() {
                                 if (ret.gps == true) {
                                     _this.upLoction()
                                 } else {
-                                    vant.Dialog.alert({
-                                        title: "提示",
-                                        message: "无法更新表位,请先打开gps"
-                                    }).then(() => {
+                                    // vant.Dialog.alert({
+                                    //     title: "提示",
+                                    //     message: "无法更新表位,请先打开gps"
+                                    // }).then(function() {
+                                    //
+                                    // })
 
-                                    })
+                                    api.alert({
+                                        title: '提示',
+                                        msg: '无法更新表位,请先打开gps',
+                                    }, function(ret, err) {
+                                    });
                                 }
                             });
                         }
@@ -1255,27 +1280,53 @@ function fnIntVue() {
                             // 重新抄表
                             gpsmodel.gpsstate(function(ret) {
                                 if (ret.gps == true) {
-                                    vant.Dialog.confirm({
-                                            title: '修改提示',
-                                            message: '确认修改将清空抄表录入',
-                                        })
-                                        .then(function() {
-                                            _this.reReadMeter();
-                                        })
-                                        .catch(function() {
-                                            return
-                                        });
-                                } else {
-                                    vant.Dialog.alert({
-                                        title: "提示",
-                                        message: "无法修改已抄,请先打开gps"
-                                    }).then(() => {
+                                    // vant.Dialog.confirm({
+                                    //         title: '修改提示',
+                                    //         message: '确认修改将清空抄表录入',
+                                    //     })
+                                    //     .then(function() {
+                                    //         _this.reReadMeter();
+                                    //     })
+                                    //     .catch(function() {
+                                    //         return
+                                    //     });
 
-                                    })
+                                    api.confirm({
+                                        title: '修改提示',
+                                        msg: '确认修改将清空抄表录入',
+                                        buttons: ['取消', '确定']
+                                    }, function(ret, err){
+                                        var index = ret.buttonIndex;
+                                        if( index==2 ){
+                                           _this.reReadMeter();
+                                        }else{return}
+                                    });
+                                } else {
+                                    // vant.Dialog.alert({
+                                    //     title: "提示",
+                                    //     message: "无法修改已抄,请先打开gps"
+                                    // }).then(function() {
+                                    //
+                                    // })
+
+                                    api.alert({
+                                        title: '提示',
+                                        msg: '无法修改已抄,请先打开gps',
+                                    }, function(ret, err) {
+
+                                    });
                                 }
                             });
                         }
                         if (index == 4) {
+                            //打开备忘录
+                            api.openWin({
+                                name: 'MeterReading_Note',
+                                url: './MeterReading_Note.html',
+                                pageParam: _this.UserDetails
+                            });
+                        }
+                        if (index == 5) {
                             gpsmodel.gpsstate(function(ret) {
                                 if (ret.gps == true) {
                                     api.openWin({
@@ -1286,22 +1337,29 @@ function fnIntVue() {
                                         }
                                     });
                                 } else {
-                                    vant.Dialog.alert({
-                                        title: "提示",
-                                        message: "无法导航,请先打开gps"
-                                    }).then(() => {
+                                    // vant.Dialog.alert({
+                                    //     title: "提示",
+                                    //     message: "无法导航,请先打开gps"
+                                    // }).then(function() {
+                                    //
+                                    // })
 
-                                    })
+                                    api.alert({
+                                        title: '提示',
+                                        msg: '无法导航,请先打开gps',
+                                    }, function(ret, err) {
+
+                                    });
                                 }
                             });
                         }
-                        if (index == 5) {
+                        if (index == 6) {
                             _this.viewLastMonthPhoto();
                         }
                     }
                 });
             },
-            reReadMeter() { //重新抄表，清空数据
+            reReadMeter: function() { //重新抄表，清空数据
                 //  清除数据
                 var yhbh = this.UserDetails.YHBH;
                 // var DELETEimg = db.executeSqlSync({
@@ -1314,19 +1372,15 @@ function fnIntVue() {
                 });
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
-                    sql: 'UPDATE MRM_USER_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE YHBH="' + yhbh + '" and userName="' + this.LoginName + '"'
-                });
-                var ret = db.executeSqlSync({
-                    name: 'CBtest',
-                    sql: 'UPDATE MRM_USER_BEAN SET CBRQ="", ZD="0", YL="0", SJSL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",ZHHBRQ="",YLZT="",SLLRFS="",SFDY="0" WHERE ZXBZBBH="' + yhbh + '" and ZXBLX="2" and userName="' + this.LoginName + '"'
+                    sql: 'UPDATE MRM_USER_BEAN SET CBRQ="", ZD="0", YL="0", CBBZ="0",BYXZT="1", CWXX=" ",ZTSCCG="0", CBYSZJD=" ",CBYSZWD=" ",FY=" ",FYHJ=" ",SJBM="",XBBH = "",XBQD = "",XBZD = "",SBYXZT="正常",CLFS="1",ZHHBRQ="",YLZT="",SLLRFS="" WHERE YHBH="' + yhbh + '" and userName="' + this.LoginName + '"'
                 });
                 var retUser = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' AND CBBZ="1" and userName="' + this.LoginName + '"'
                 });
                 var retUsers = db.selectSqlSync({
                     name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and ZXBLX!="2" and userName="' + this.LoginName + '"'
+                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.UserDetails.CBCH + '\' and userName="' + this.LoginName + '"'
                 });
 
                 var wcusers = retUsers.data.length - retUser.data.length
@@ -1357,7 +1411,7 @@ function fnIntVue() {
                 // this.ImgData = [];
                 this.resetInputActive();
             },
-            upLoction() { //更新表位
+            upLoction: function() { //更新表位
                 //获取当前用户信息
                 _this = this;
                 bMap.getLocation({
@@ -1443,7 +1497,7 @@ function fnIntVue() {
                     }
                 });
             },
-            upLoctionAjax(lon, lat, callback) { //上传表位信息调用接口
+            upLoctionAjax: function(lon, lat, callback) { //上传表位信息调用接口
                 //获取当前用户信息
                 var telponeNumer = this.UserDetails.YHDH;
                 var userCode = this.UserDetails.YHBH;
@@ -1476,7 +1530,8 @@ function fnIntVue() {
                     callback(ret, err);
                 });
             },
-            getKeyboardNumbers(newValue, QDChange = false) {
+            getKeyboardNumbers: function(newValue, QDChange) {
+                QDChange = QDChange || false;
                 //判断是否需要录入换表日期，如果需要录入，就判断换表日期是否填写了。
                 if (this.NeedHBRQ) {
                     if (this.HBRQ == "") {
@@ -1485,7 +1540,7 @@ function fnIntVue() {
                             duration: 2000,
                             location: 'bottom'
                         });
-                        return
+                        return false;
                     }
                 }
                 //读数
@@ -1499,7 +1554,7 @@ function fnIntVue() {
                             duration: 2000,
                             location: 'bottom'
                         });
-                        return
+                        return false;
                     }
                     if (!QDChange) {
                         this.ZD += newValue;
@@ -1590,16 +1645,16 @@ function fnIntVue() {
                 }
                 this.calculateYL();
             },
-            longTapDelete() { //长按一直删除
+            longTapDelete: function() { //长按一直删除
                 this.deleteNumber();
-                this.timer = setInterval(() => {
+                this.timer = setInterval(function() {
                     this.deleteNumber();
                 }, 100);
             },
-            stopDelete() { //停止长按删除
+            stopDelete: function() { //停止长按删除
                 clearInterval(this.timer);
             },
-            deleteNumber() { //删除
+            deleteNumber: function() { //删除
                 _this = this;
                 if (this.UserDetails.CBBZ != "1") {
                     if (this.editDegrees) { //读数
@@ -1658,7 +1713,7 @@ function fnIntVue() {
                 }
                 this.calculateYL();
             },
-            setDefaultNumbers() { //设置默认数据
+            setDefaultNumbers: function() { //设置默认数据
                 // if (this.BYXZT == 10 || this.BYXZT == 12 || this.BYXZT == 25 || this.BYXZT == 26 || this.BYXZT == 17) {
                 //     this.YL = 0;
                 // }
@@ -1673,15 +1728,7 @@ function fnIntVue() {
                 this.ZD = 0;
                 this.YL = 0;
             },
-            calculateYL() {
-                if (this.BYXZT == 10 || this.BYXZT == 9) {
-                    //追水，止度等于起度，水量为0
-                    this.ZD = this.UserDetails.QD;
-                    this.YL = 0;
-                    this.resultType = "正常";
-                    this.SJSL = this.YL;
-                    return;
-                }
+            calculateYL: function() {
                 var result = 0; //水量
                 var zsl = 0; //周期总水量
                 var sccbrq = ""; //上次抄表日期
@@ -1690,12 +1737,6 @@ function fnIntVue() {
                 var changeTable = false; //是否换表
                 var day = 0; //周期天数
                 var avgWaterVolume = 0; //周期总水量
-                var waterSBLC = 0;
-                if (this.UserDetails.SBLC == null || this.UserDetails.SBLC == " " || this.UserDetails.SBLC == "") {
-                    waterSBLC = this.UserDetails.QD;
-                } else {
-                    waterSBLC = this.UserDetails.SBLC;
-                }
                 if (this.UserDetails.SCCBRQ != null && this.UserDetails.SCCBRQ != " " && this.UserDetails.SCCBRQ != "") {
                     sccbrq = this.UserDetails.SCCBRQ; //上一次抄表日期
                 }
@@ -1722,103 +1763,169 @@ function fnIntVue() {
 
                 //判断是否是换表
                 if (this.CLFS == 3) { //换表
-                    var waterSFSZJHB = true;
-                    var waterSFSFB = false;
-                    var waterSCCBRQ = sccbrq;
-                    var newyear = Time("year"); //获取系统的年；
-                    var newmonth = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
-                    var newday = Time("day"); //获取系统日
-                    var waterBCCBRQ = newyear + '-' + newmonth + '-' + newday;
-                    var waterHBRQ = this.HBRQ;
-                    var waterQD = "";
-                    var waterZD = "";
-                    var waterXBQD = "";
-                    var waterXBZD = "";
-                    if (this.SLLRFS == 1) { //正常
-                        var waterQD = this.UserDetails.QD;
-                        var waterZD = (this.ZD == "" ? 0 : this.ZD);
-                        var waterXBQD = (this.XBQD == "" ? 0 : this.XBQD);
-                        var waterXBZD = (this.XBZD == "" ? 0 : this.XBZD);
-                    } else if (this.SLLRFS == 2) { //估抄
-                        waterSFSZJHB = false;
-                        if (sccbrq != "") {
-                            var estimatedOptions = {
-                                waterQD: this.UserDetails.QD, //起度
-                                waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
-                                waterZSL: zsl, //周期总水量
-                                waterZTS: day, //周期总天数
-                                waterSCCBRQ: sccbrq, //上次抄表日期
-                                waterBCCBRQ: this.HBRQ //本次抄表日期
-                            }
-                            this.JBYL = estimatedAlgorithm(estimatedOptions);
-                            this.ZD = parseInt(this.UserDetails.QD) + parseInt(this.JBYL);
+                    var turnOverTheTable = false; //是否是翻表
+                    var WeekTableChange = true; //是否是周检换表状态
+                    var lastIsEstimateCopy = false; //上次是否是估抄
+                    var waterZD = 0;
+                    var waterQD = 0;
+                    var oldWaterQD = 0;
+                    var oldDismantleZD = 0;
+                    changeTable = true;
 
+                    if (this.SLLRFS == 1) { //正常
+                        waterZD = (this.XBZD == "" ? 0 : this.XBZD);
+                        waterQD = (this.XBQD == "" ? 0 : this.XBQD);
+                        oldWaterQD = this.UserDetails.QD;
+                        oldDismantleZD = (this.ZD == "" ? 0 : this.ZD);
+                    } else if (this.SLLRFS == 2) { //估抄
+                        WeekTableChange = true;
+                        if (sccbrq != "") {
+                            var cycleOptions = {
+                                estimateCopyType: 0, //估算类型
+                                avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                                lastMeterReadingTime: sccbrq, //上一次抄表日期
+                                dangqianriqi: this.HBRQ, //当前抄表日期
+                                weekSums: day, //周期总天数
+                                estimateCopyFirst: { //第一次估抄后抄表参数
+                                    changeTable: changeTable, //是否换表,
+                                    changeTableTime: this.HBRQ, //换表日期
+                                    waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                                    estimateCopyZD: this.UserDetails.QD, //估水止度
+                                    currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                                }
+                            }
+                            this.JBYL = estimateCopyCounts(cycleOptions);
+                            this.ZD = parseInt(this.UserDetails.QD) + parseInt(this.JBYL);
+                            // oldWaterQD = this.UserDetails.QD;
+                            // oldDismantleZD = (this.ZD == "" ? 0 : this.ZD);
+                            oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                            oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
                             waterQD = this.UserDetails.QD;
                             waterZD = (this.ZD == "" ? 0 : this.ZD);
-                            waterXBQD = (this.XBQD == "" ? 0 : this.XBQD);
-                            waterXBZD = (this.XBZD == "" ? 0 : this.XBZD);
                         } else {
+                            // oldWaterQD = this.UserDetails.QD;
+                            // oldDismantleZD = 0;
+                            oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                            oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
                             waterQD = 0;
                             waterZD = 0;
-                            waterXBQD = (this.XBQD == "" ? 0 : this.XBQD);
-                            waterXBZD = (this.XBZD == "" ? 0 : this.XBZD);
                         }
-
+                        // waterZD = (this.XBZD == "" ? 0 : this.XBZD);
+                        // waterQD = (this.XBQD == "" ? 0 : this.XBQD);
                     } else if (this.SLLRFS == 3) { //翻表
-                        waterSFSFB = true;
+                        turnOverTheTable = true;
+                        oldDismantleZD = (this.XBZD == "" ? 0 : this.XBZD);
+                        oldWaterQD = (this.XBQD == "" ? 0 : this.XBQD);
+
                         waterQD = this.UserDetails.QD;
                         waterZD = (this.ZD == "" ? 0 : this.ZD);
-                        waterXBQD = (this.XBQD == "" ? 0 : this.XBQD);
-                        waterXBZD = (this.XBZD == "" ? 0 : this.XBZD);
+                    }
+                    //alert("旧表起度：" + waterQD + "旧表止度" + waterZD + "新表起度：" + oldWaterQD + "新表止度" + oldDismantleZD);
+                    if (this.UserDetails.SCLRFS == 2) { //上次是估抄
+                        lastIsEstimateCopy = true;
                     }
 
-                    var options = {
-                            waterSFSZJHB: waterSFSZJHB, //是否是周检换表
-                            waterSFSFB: waterSFSFB, //是否是翻表
-                            waterSBLC: waterSBLC, //水表量程
-                            waterSCCBRQ: waterSCCBRQ, //上次抄表日期
-                            waterBCCBRQ: waterBCCBRQ, //本次抄表日期
-                            waterHBRQ: waterHBRQ, //换表日期
-                            waterQD: waterQD, //旧表起度
-                            waterZD: waterZD, //旧表止度
-                            waterXBQD: waterXBQD, //新表起度
-                            waterXBZD: waterXBZD, //新表止度
+                    var normalOptions = {
+                        turnOverTheTable: turnOverTheTable, //是否是翻表 true 表示是 false表示不是 可以不传
+                        waterZD: waterZD, //旧表止度
+                        waterQD: waterQD, //旧表起度
+                        weekSums: day, //周期总天数
+                        WeekTableChange: WeekTableChange, //是否是周检换表状态
+                        oldDismantleZD: oldDismantleZD, //新表止度，周检旧表拆表止度 ,(周检状态需要传值)
+                        oldWaterQD: oldWaterQD, //新表起度，旧表上周期查表止度,(周检状态需要传值)
+                        weekWaterMeterMaxN: this.UserDetails.QD, //周检旧表水表最大技术值
+                        lastIsEstimateCopy: lastIsEstimateCopy, //上次是否是估抄 (周期换表状态需要)
+                        lastMeterReadingTime: sccbrq, //上一次抄表日期
+                        avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                        estimateCopyFirst: { //第一次估抄后抄表参数
+                            changeTable: changeTable, //是否换表,
+                            changeTableTime: this.HBRQ, //换表日期
+                            waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                            estimateCopyZD: this.UserDetails.QD, //估水止度
+                            currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
                         }
-                        //alert(JSON.stringify(options));
-                    result = inTheTableAlgorithm(options);
-
+                    }
+                    result = normalVolumeCounts(normalOptions);
                 } else {
                     if (this.SLLRFS == 1) { //正常
+                        //判断上次是否是估抄
+                        // if (this.UserDetails.SCLRFS == 2) {
+                        //     //上次抄表是估抄
+                        //     var cycleOptions = {
+                        //         estimateCopyType: 1, //估算类型
+                        //         avgWaterVolume: avgWaterVolume, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                        //         lastMeterReadingTime: sccbrq, //上一次抄表日期
+                        //         weekSums: day, //周期总天数
+                        //         estimateCopyFirst: { //第一次估抄后抄表参数
+                        //             changeTable: changeTable, //是否换表,
+                        //             changeTableTime: this.HBRQ, //换表日期
+                        //             waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                        //             estimateCopyZD: this.UserDetails.QD, //估水止度
+                        //             currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                        //         }
+                        //     }
+                        //     result = estimateCopyCounts(cycleOptions);
+                        // } else {
+                        //     //上次抄表不是估抄
+                        //     var normalOptions = {
+                        //         turnOverTheTable: false, //是否是翻表 true 表示是 false表示不是 可以不传
+                        //         waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
+                        //         waterQD: this.UserDetails.QD, //起度
+                        //         weekSums: day //周期总天数
+                        //     }
+                        //     result = normalVolumeCounts(normalOptions);
+                        // }
                         var normalOptions = {
-                            waterSFFB: false, //是否是翻表 true 表示是 false表示不是
-                            waterSBLC: waterSBLC, //水表量程
-                            waterQD: this.UserDetails.QD, //止度
-                            waterZD: (this.ZD == "" ? 0 : this.ZD) //起度
-                        }
-                        result = normalAlgorithm(normalOptions);
-                    } else if (this.SLLRFS == 2) { //估抄
-                        var newyear = Time("year"); //获取系统的年；
-                        var newmonth = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
-                        var newday = Time("day"); //获取系统日
-                        var waterBCCBRQ = newyear + '-' + newmonth + '-' + newday;
-                        var estimatedOptions = {
-                            waterQD: this.UserDetails.QD, //起度
+                            turnOverTheTable: false, //是否是翻表 true 表示是 false表示不是 可以不传
                             waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
-                            waterZSL: zsl, //周期总水量
-                            waterZTS: day, //周期总天数
-                            waterSCCBRQ: sccbrq, //上次抄表日期
-                            waterBCCBRQ: waterBCCBRQ //本次抄表日期
+                            waterQD: this.UserDetails.QD, //起度
+                            weekSums: day //周期总天数
                         }
-                        result = estimatedAlgorithm(estimatedOptions);
+                        result = normalVolumeCounts(normalOptions);
+                    } else if (this.SLLRFS == 2) { //估抄
+                        //判断上次抄表是否是估抄
+                        if (this.UserDetails.SCLRFS == 2) { //上次抄表是估抄
+                            var cycleOptions = {
+                                estimateCopyType: 1, //估算类型
+                                avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                                lastMeterReadingTime: sccbrq, //上一次抄表日期
+                                weekSums: day, //周期总天数
+                                estimateCopyFirst: { //第一次估抄后抄表参数
+                                    changeTable: changeTable, //是否换表,
+                                    changeTableTime: this.HBRQ, //换表日期
+                                    waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                                    estimateCopyZD: this.UserDetails.QD, //估水止度
+                                    currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                                }
+                            }
+                        } else { //上次抄表不是估抄
+                            var cycleOptions = {
+                                estimateCopyType: 0, //估算类型
+                                avgWaterVolume: zsl, //日平均用水量 (100 + 103 + 80) / (40 + 38 + 40)
+                                lastMeterReadingTime: sccbrq, //上一次抄表日期
+                                weekSums: day, //周期总天数
+                                estimateCopyFirst: { //第一次估抄后抄表参数
+                                    changeTable: changeTable, //是否换表,
+                                    changeTableTime: this.HBRQ, //换表日期
+                                    waterTableHouseTime: this.UserDetails.QYRQ, //换表新水表立户日期
+                                    estimateCopyZD: this.UserDetails.QD, //估水止度
+                                    currentZD: (this.ZD == "" ? 0 : this.ZD) //当前止度
+                                }
+                            }
+                        }
+                        //alert(JSON.stringify(cycleOptions));
+                        result = estimateCopyCounts(cycleOptions);
+                        //alert(parseInt(this.UserDetails.QD));
+                        //alert(parseInt(result));
                         this.ZD = parseInt(this.UserDetails.QD) + parseInt(result);
                     } else if (this.SLLRFS == 3) { //翻表
                         var normalOptions = {
-                            waterSFFB: true, //是否是翻表 true 表示是 false表示不是
-                            waterSBLC: waterSBLC, //水表量程
-                            waterQD: this.UserDetails.QD, //止度
-                            waterZD: (this.ZD == "" ? 0 : this.ZD) //起度
+                            turnOverTheTable: true, //是否是翻表 true 表示是 false表示不是 可以不传
+                            waterZD: (this.ZD == "" ? 0 : this.ZD), //止度
+                            waterQD: this.UserDetails.QD, //起度
+                            weekSums: day //周期总天数
                         }
-                        result = normalAlgorithm(normalOptions);
+                        result = normalVolumeCounts(normalOptions);
                     }
                 }
                 //通过新表计算旧表的
@@ -1841,7 +1948,6 @@ function fnIntVue() {
                 } else {
                     this.YL = result;
                 }
-                this.SJSL = this.YL;
 
                 var ret = db.selectSqlSync({
                     name: 'CBtest',
@@ -1849,60 +1955,27 @@ function fnIntVue() {
                 });
                 if (ret.status) {
                     if (ret.data.length > 0) { //当前用户是总表
-                        var ret = db.selectSqlSync({
-                            name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="0"'
-                        });
-                        if (ret.status) {
-                            if (ret.data.length < 1) { //当前用户是总表,且子表已经抄完
-                                var ret = db.selectSqlSync({
-                                    name: 'CBtest',
-                                    sql: 'select YHBH,YL from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="1"'
-                                });
-                                if (ret.status) {
-                                    if (ret.data.length > 0) {
-                                        var sum = 0;
-                                        for (var i = 0; i < ret.data.length; i++) {
-                                            sum += parseInt(ret.data[i].YL);
+                        if (this.SLLRFS != 2) {
+                            var ret = db.selectSqlSync({
+                                name: 'CBtest',
+                                sql: 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="0"'
+                            });
+                            if (ret.status) {
+                                if (ret.data.length < 1) { //当前用户是总表,且子表已经抄完
+                                    var ret = db.selectSqlSync({
+                                        name: 'CBtest',
+                                        sql: 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表" and userName="' + this.LoginName + '") and userName="' + this.LoginName + '" and CBBZ="1"'
+                                    });
+                                    if (ret.status) {
+                                        if (ret.data.length > 0) {
+                                            var sum = 0;
+                                            for (var i = 0; i < ret.data.length; i++) {
+                                                sum += parseInt(ret.data[i].YL);
+                                            }
+                                            this.YL = parseInt(this.YL) - parseInt(sum);
                                         }
-                                        this.YL = parseInt(this.YL) - parseInt(sum);
                                     }
                                 }
-                            }
-                        }
-                    }
-                }
-
-                if (this.UserDetails.ZXBLX == "1") { //该用户是总表
-                    if (this.UserDetails.ZXBJSFS == "2") { //按比例计算
-                        //查询当前总表对应的虚表
-                        var retUser = db.selectSqlSync({
-                            name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
-                        });
-                        //alert(JSON.stringify(retUser));
-                        var zsl = Number(this.SJSL);
-                        var sysl = 0;
-                        for (var i = 0; i < retUser.data.length; i++) {
-                            var sl = 0;
-                            if (i == retUser.data.length - 1) {
-                                sl = zsl - sysl;
-                                //alert("最后剩余水量：" + sl);
-                            } else {
-                                if (this.QZFS == "0") { //向下取整
-                                    sl = Math.floor(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "向下取整：" + sl);
-                                } else if (this.QZFS == "1") { //四舍五入
-                                    sl = Math.round(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "四舍五入：" + sl);
-                                } else if (this.QZFS == "2") { //向上取整
-                                    sl = Math.ceil(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + parseInt(retUser.data[i].ZXBJSZ) + "向上取整：" + sl);
-                                }
-                                sysl = sysl + sl;
-                            }
-                            if (this.UserDetails.YHBH == retUser.data[i].YHBH) {
-                                this.YL = sl;
                             }
                         }
                     }
@@ -1913,7 +1986,7 @@ function fnIntVue() {
                         var shun = parseInt(this.UserDetails.SCSL) * this.XFBL / 100;
                         var num = parseInt(this.UserDetails.SCSL) - shun;
                         //alert("水量浮动判断方式：" + this.YCPDFS + "上次水量：" + this.UserDetails.SCSL + "下浮比例：" + this.XFBL + "比值：" + num + "本次水量：" + this.YL);
-                        if (parseInt(this.YL) > num) { //正常
+                        if (parseInt(this.YL) > parseInt(num)) { //正常
                             this.resultType = "正常"
                         } else { //水量突升
                             this.resultType = "水量异常突降"
@@ -1922,7 +1995,7 @@ function fnIntVue() {
                         var shun = parseInt(this.UserDetails.SCSL) * this.SFBL / 100;
                         var num = parseInt(this.UserDetails.SCSL) + shun;
                         //alert("水量浮动判断方式：" + this.YCPDFS + "上次水量：" + this.UserDetails.SCSL + "上浮比例：" + this.SFBL + "比值：" + num + "本次水量：" + this.YL);
-                        if (num > parseInt(this.YL)) { //正常
+                        if (parseInt(num) > parseInt(this.YL)) { //正常
                             this.resultType = "正常"
                         } else { //水量突升
                             this.resultType = "水量异常突升"
@@ -1964,9 +2037,9 @@ function fnIntVue() {
                     if (parseInt(this.UserDetails.SCSL) > parseInt(this.YL)) { //水量下降
                         var shun = parseInt(this.UserDetails.SCSL) * this.XFBL / 100;
                         var num = parseInt(this.UserDetails.SCSL) - shun;
-                        var a = qskj + qsysf + this.UserDetails.KJ + jsysf + jskj + "";
+                        var a = qskj + qsysf + this.UserDetails.KJ + jsysf + jskj + ""
                         //alert("水量浮动判断方式：" + this.YCPDFS + "口径判断范围：" + a + "上次水量：" + this.UserDetails.SCSL + "下浮比例：" + this.XFBL + "比值：" + num + "本次水量：" + this.YL);
-                        if (parseInt(this.YL) > num) { //正常
+                        if (parseInt(this.YL) > parseInt(num)) { //正常
                             this.resultType = "正常"
                         } else { //水量突升
                             this.resultType = "水量异常突降"
@@ -1974,9 +2047,9 @@ function fnIntVue() {
                     } else if (parseInt(this.UserDetails.SCSL) < parseInt(this.YL)) { //水量上升
                         var shun = parseInt(this.UserDetails.SCSL) * this.SFBL / 100;
                         var num = parseInt(this.UserDetails.SCSL) + shun;
-                        var a = qskj + qsysf + this.UserDetails.KJ + jsysf + jskj + "";
+                        var a = qskj + qsysf + this.UserDetails.KJ + jsysf + jskj + ""
                         //alert("水量浮动判断方式：" + this.YCPDFS + "口径判断范围：" + a + "上次水量：" + this.UserDetails.SCSL + "上浮比例：" + this.SFBL + "比值：" + num + "本次水量：" + this.YL);
-                        if (num > parseInt(this.YL)) { //正常
+                        if (parseInt(num) > parseInt(this.YL)) { //正常
                             this.resultType = "正常"
                         } else { //水量突升
                             this.resultType = "水量异常突升"
@@ -1996,61 +2069,37 @@ function fnIntVue() {
                 //
                 // this.resultType = abnormalWaterVolumeReduce(options);
             },
-            allSave() { //保存数据并上传
-                if (this.UserDetails.ZXBLX == "1") { //该用户是总表
-                    if (this.UserDetails.ZXBJSFS == "2") { //按比例计算
-                        var retUser = db.selectSqlSync({
-                            name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
-                        });
-                        var zblz = 0;
-                        for (var i = 0; i < retUser.data.length; i++) {
-                            zblz = zblz + parseInt(retUser.data[i].ZXBJSZ);
-                        }
-                        if (zblz != 100) { //判断总分表是否下载完。
-                            api.toast({
-                                msg: '总分表未下载完全，不能抄表',
-                                duration: 2000,
-                                location: 'top'
-                            });
-                            this.preventRepeatTouch = false;
-                            return;
-                        }
-                    }
-                }
+            allSave: function() { //保存数据并上传
+                // 获取当前表状态  判断表是否是总表
+                var ret=this.isSummaryTable;
+                // if (ret.status) {
+                if (ret.status && ret.data.length > 0) {
+                    //当前用户是主表且有未抄表的子表。
+                    //跳转到子表
+                    this.ZBBH = this.UserDetails.YHBH;
+                    var UserNumber = this.UserList.findIndexNew(function(item) {
+                        return item.YHBH == ret.data[0].YHBH;
+                    });
+                    _this = this;
+                    api.confirm({
+                        title: '提示',
+                        msg: '当前用户为总表，请先抄子表',
+                        buttons: ['确定', '取消']
+                    }, function(ret, err) {
+                        var index = ret.buttonIndex;
+                        if (index == 1) {
 
-                var sql = 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表") and userName="' + this.LoginName + '" and CBBZ="0"';
-                var ret = db.selectSqlSync({
-                    name: 'CBtest',
-                    sql: sql
-                });
-                if (ret.status) {
-                    if (ret.data.length > 0) {
-                        //当前用户是主表且有未抄表的子表。
-                        //跳转到子表
-                        this.ZBBH = this.UserDetails.YHBH;
-                        var UserNumber = this.UserList.findIndex(function(item) {
-                            return item.YHBH == ret.data[0].YHBH;
-                        });
-                        _this = this;
-                        api.confirm({
-                            title: '提示',
-                            msg: '当前用户为总表，请先抄子表',
-                            buttons: ['确定', '取消']
-                        }, function(ret, err) {
-                            var index = ret.buttonIndex;
-                            if (index == 1) {
-                                if (UserNumber == -1) {
-                                    _this.UserNumber = 0;
-                                } else {
-                                    _this.UserNumber = UserNumber;
-                                }
-                            }
-                        });
-                        return;
-                    }
+                            _this.UserNumber = UserNumber == -1 ? 0 :UserNumber;
+                            // if (UserNumber == -1) {
+                            //     _this.UserNumber = 0;
+                            // } else {
+                            //     _this.UserNumber = UserNumber;
+                            // }
+                        }
+                    });
+                    return false;
                 }
-
+                // }
                 if (!this.preventRepeatTouch && this.UserDetails.CBBZ != "1") {
                     this.preventRepeatTouch = true;
                     // if (this.NeedPhotograph && ((this.ImgData.length == 0 && !this.hasMeterLocationImg) || (this.ImgData.length == 1 && this.hasMeterLocationImg))) {
@@ -2066,7 +2115,6 @@ function fnIntVue() {
                     //     this.photograph(); //保存时-满足强制拍照-直接打开相机
                     //     return;
                     // }
-
                     if (!this.showActualCode) { //不输入实际表码：实际表码默认为度数
                         this.SJBM = this.ZD;
                     }
@@ -2081,7 +2129,6 @@ function fnIntVue() {
                     var zd = this.ZD;
                     var qidu = Number(qd);
                     var zhidu = parseInt(zd);
-
                     if (this.NeedDegrees && isNaN(parseInt(this.ZD))) {
                         api.toast({
                             msg: '请填写读数',
@@ -2089,7 +2136,7 @@ function fnIntVue() {
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     } else if (this.NeedDegrees && zhidu < qidu) {
                         if (this.SLLRFS != 3) {
                             api.toast({
@@ -2098,7 +2145,7 @@ function fnIntVue() {
                                 location: 'top'
                             });
                             this.preventRepeatTouch = false;
-                            return;
+                            return false;
                         }
                     }
                     if (this.NeedConsumption && isNaN(parseInt(this.YL))) {
@@ -2108,7 +2155,7 @@ function fnIntVue() {
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     }
                     if (this.NeedSJBM && isNaN(parseInt(this.SJBM))) {
                         api.toast({
@@ -2117,7 +2164,7 @@ function fnIntVue() {
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     }
                     // if (this.NeedXBBH && isNaN(parseInt(this.XBBH))) {
                     //     api.toast({
@@ -2135,7 +2182,7 @@ function fnIntVue() {
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     } else if (this.NeedXBBH && isNaN(parseInt(this.XBZD))) {
                         api.toast({
                             msg: '请填写新表止度',
@@ -2143,121 +2190,107 @@ function fnIntVue() {
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     } else if (this.NeedXBBH && parseInt(this.XBZD) < parseInt(this.XBQD)) {
                         api.toast({
-                            msg: '新表止度不能少于新表起度',
+                            msg: '新表起度少于新表起度',
                             duration: 2000,
                             location: 'top'
                         });
                         this.preventRepeatTouch = false;
-                        return;
+                        return false;
                     }
 
-                    var imgs = $(".imgDiv").length;
-                    if (this.ImgData.length == 0 && imgs < 1) {
-                        if (this.resultType != "正常" && this.resultType != "") {
-                            //alert("水量异常：" + this.resultType + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-水量异常-直接打开相机
-                            return;
-                        } else if (this.SBYXZT != "正常" && this.SBYXZT != "" && this.SBYXZT != " ") {
-                            //alert("水表状态非正常拍照。" + this.SBYXZT + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-非正常水表状态-直接打开相机
-                            return;
-                        } else if (this.UserDetails.SFQZPZ == "1") {
-                            //alert("用户强制拍照。" + this.UserDetails.SFQZPZ + "已拍照数：" + this.ImgData.length);
-                            this.preventRepeatTouch = false;
-                            this.photograph(); //保存时-满足强制拍照-直接打开相机
-                            return;
-                        }
+                    if (this.resultType != "正常" && this.resultType != "" && this.ImgData.length < 1) {
+                        alert(this.resultType);
+                        this.preventRepeatTouch = false;
+                        this.photograph(); //保存时-满足强制拍照-直接打开相机
+                        return false;
                     }
 
-                    if (this.resultType != "正常" && this.resultType != "") {
-                        //弹出提示
-                        api.confirm({
-                            title: '提示',
-                            msg: this.resultType,
-                            buttons: ['继续', '重抄']
-                        }, function(ret, err) {
-                            var index = ret.buttonIndex;
-                            if (index == 0) {
-                                _this.preventRepeatTouch = false;
-                                return;
-                            } else if (index == 1) {
-                                gpsmodel.gpsstate(function(ret) {
-                                    if (ret.gps == true) {
-                                        if (!_this.AbnormalStatus.status) {
-                                            vant.Dialog.confirm({
-                                                    title: '提示',
-                                                    message: '当前用户水量' + _this.AbnormalStatus.text + ',确认保存？',
-                                                })
-                                                .then(function() {
-                                                    _this.LoadOrNot = 1
-                                                    api.showProgress({
-                                                        title: '保存中',
-                                                        modal: false
-                                                    });
-                                                    _this.saveAndUploadLocation();
-                                                })
-                                                .catch(function() {
-                                                    _this.preventRepeatTouch = false;
-                                                    return;
-                                                });
-                                        } else {
-                                            _this.LoadOrNot = 1
-                                            api.showProgress({
-                                                title: '保存中',
-                                                modal: false
-                                            });
-                                            _this.saveAndUploadLocation();
-                                        }
-                                    } else {
-                                        vant.Toast("无法进行抄表操作,请先打开gps");
-                                        _this.preventRepeatTouch = false;
+                    if (this.resultType != null && this.SBYXZT != " " && this.resultType != "" && this.resultType != "正常" && this.ImgData.length < 1) {
+                        this.preventRepeatTouch = false;
+                        this.photograph(); //保存时-满足强制拍照-直接打开相机
+                        return false;
+                    }
+                    gpsmodel.gpsstate(function(ret) {
+                        if (ret.gps == true) {
+                            if(_this.AbnormalStatus.status) {
+                                _this.LoadOrNot = 1
+                                api.showProgress({
+                                    title: '保存中',
+                                    modal: false
+                                });
+                                _this.saveAndUploadLocation();
+                            } else {
+                                api.confirm({
+                                    title: '提示',
+                                    msg: '当前用户水量' + _this.AbnormalStatus.text + ',确认保存？',
+                                    buttons: ['取消', '确定']
+                                }, function(ret, err){
+                                    var index = ret.buttonIndex;
+                                    if( index==2 ){
+                                      _this.LoadOrNot = 1
+                                      api.showProgress({
+                                          title: '保存中',
+                                          modal: false
+                                      });
+                                      _this.saveAndUploadLocation();
+                                    }else{
+                                      _this.preventRepeatTouch = false;
+                                      return false;
                                     }
                                 });
-                            } else if (index == 2) {
-                                _this.reReadMeter();
-                                _this.preventRepeatTouch = false;
-                                return;
                             }
-                        });
-                    } else {
-                        gpsmodel.gpsstate(function(ret) {
-                            if (ret.gps == true) {
-                                if (!_this.AbnormalStatus.status) {
-                                    vant.Dialog.confirm({
-                                            title: '提示',
-                                            message: '当前用户水量' + _this.AbnormalStatus.text + ',确认保存？',
-                                        })
-                                        .then(function() {
-                                            _this.LoadOrNot = 1
-                                            api.showProgress({
-                                                title: '保存中',
-                                                modal: false
-                                            });
-                                            _this.saveAndUploadLocation();
-                                        })
-                                        .catch(function() {
-                                            _this.preventRepeatTouch = false;
-                                            return;
-                                        });
-                                } else {
-                                    _this.LoadOrNot = 1
-                                    api.showProgress({
-                                        title: '保存中',
-                                        modal: false
-                                    });
-                                    _this.saveAndUploadLocation();
-                                }
-                            } else {
-                                vant.Toast("无法进行抄表操作,请先打开gps");
-                                _this.preventRepeatTouch = false;
-                            }
-                        });
-                    }
+                            // if (!_this.AbnormalStatus.status) {
+                            //     // vant.Dialog.confirm({
+                            //     //         title: '提示',
+                            //     //         message: '当前用户水量' + _this.AbnormalStatus.text + ',确认保存？',
+                            //     //     })
+                            //     //     .then(function() {
+                            //     //         _this.LoadOrNot = 1
+                            //     //         api.showProgress({
+                            //     //             title: '保存中',
+                            //     //             modal: false
+                            //     //         });
+                            //     //         _this.saveAndUploadLocation();
+                            //     //     })
+                            //     //     .catch(function() {
+                            //     //         _this.preventRepeatTouch = false;
+                            //     //         return;
+                            //     //     });
+                            //
+                            //     api.confirm({
+                            //         title: '提示',
+                            //         msg: '当前用户水量' + _this.AbnormalStatus.text + ',确认保存？',
+                            //         buttons: ['取消', '确定']
+                            //     }, function(ret, err){
+                            //         var index = ret.buttonIndex;
+                            //         if( index==2 ){
+                            //           _this.LoadOrNot = 1
+                            //           api.showProgress({
+                            //               title: '保存中',
+                            //               modal: false
+                            //           });
+                            //           _this.saveAndUploadLocation();
+                            //         }else{
+                            //           _this.preventRepeatTouch = false;
+                            //           return;
+                            //         }
+                            //     });
+                            // } else {
+                            //     _this.LoadOrNot = 1
+                            //     api.showProgress({
+                            //         title: '保存中',
+                            //         modal: false
+                            //     });
+                            //     _this.saveAndUploadLocation();
+                            // }
+                        } else {
+                            vant.Toast("无法进行抄表操作,请先打开gps");
+                            _this.preventRepeatTouch = false;
+                        }
+                    });
                 } else if (!this.preventRepeatTouch && this.isAppendImg) {
                     this.preventRepeatTouch = true;
                     this.appendImg();
@@ -2269,7 +2302,7 @@ function fnIntVue() {
                     });
                 }
             },
-            print() { //打印
+            print: function() { //打印
                 _this = this;
                 api.openWin({
                     name: 'CountPrint',
@@ -2279,36 +2312,35 @@ function fnIntVue() {
                     }
                 });
             },
-            saveAndUploadLocation() { //上传保存表位信息
+            saveAndUploadLocation: function() { //上传保存表位信息
                 _this = this;
-                var retUser = db.selectSqlSync({
-                    name: 'CBtest',
-                    sql: 'SELECT * FROM MRM_USER_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' and userName="' + this.LoginName + '"'
-                });
-                var jwd = retUser.data[0].JWD;
+                // var retUser = db.selectSqlSync({
+                //     name: 'CBtest',
+                //     sql: 'SELECT * FROM MRM_USER_BEAN WHERE YHBH=\'' + this.UserDetails.YHBH + '\' and userName="' + this.LoginName + '"'
+                // });
+                //获取用户经纬度  判断当前是否有经纬度  当获取位置失败后使用当前的经纬度
+                var jwd = this.UserDetails.JWD;
                 var JWDData = jwd.split(",");
                 bMap.getLocation({
                     accuracy: '10m',
                     autoStop: true,
                     filter: 1
                 }, function(ret, err) {
-                    if (ret.status) {
-                        var lon = ret.lon;
-                        var lat = ret.lat;
-                        if (_this.UserDetails.DWSFSC != "1") {
-                            _this.saveAndUploadLocationPublic(JWDData, lon, lat);
-                        } else { //表位信息已上传时保存不再更新表位信息
-                            _this.saveData(lon, lat);
-                        }
+                    if(err) {
+                      alert('获取位置失败，请重写上传');
+                      return false;
+                    }
+                    var lon = ret.lon || '';
+                    var lat = ret.lat || '';
+                    if(_this.UserDetails.DWSFSC != '1' && ret.status) {
+                        _this.saveAndUploadLocationPublic(JWDData, lon, lat);
                     } else {
-                        _this.saveData('', '');
-                        // vant.Toast("获取定位失败，请重试");
-                        _this.preventRepeatTouch = false;
-                        return;
+                      if(!ret.status) _this.preventRepeatTouch = false;
+                      _this.saveData(lon, lat);
                     }
                 });
             },
-            saveAndUploadLocationPublic(JWDData, lon, lat) { //上传和保存表位信息公共方法
+            saveAndUploadLocationPublic: function(JWDData, lon, lat) { //上传和保存表位信息公共方法
                 _this = this;
                 var meterLon = lon;
                 var meterLat = lat;
@@ -2321,7 +2353,7 @@ function fnIntVue() {
                     if (ret.Data == "" || ret.Data == " " || ret.Data == undefined || ret.Data == "undefined") {
                         resData = [];
                     } else {
-                        resData = JSON.parse(ret.Data);
+                        resData =  JSON.parse(ret.Data);
                     }
                     if (ret && ret.Status == 0 && ((resData.length > 0 && resData.IS_SCCG == "1") || resData.length == 0)) {
                         _this.UserDetails.DWSFSC = "1";
@@ -2333,56 +2365,7 @@ function fnIntVue() {
                 });
                 this.saveData(lon, lat);
             },
-            saveData(lon, lat) { //保存用户数据到本地
-                if (this.UserDetails.ZXBLX == "1") { //该用户是总表
-                    if (this.UserDetails.ZXBJSFS == "2") { //按比例计算
-                        //查询当前总表对应的虚表
-                        var retUser = db.selectSqlSync({
-                            name: 'CBtest',
-                            sql: 'select * from MRM_USER_BEAN where ZXBZBBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '" order by ZXBJSSX'
-                        });
-                        //alert(JSON.stringify(retUser));
-                        var zsl = Number(this.SJSL);
-                        var sysl = 0;
-                        for (var i = 0; i < retUser.data.length; i++) {
-                            var sl = 0;
-                            if (i == retUser.data.length - 1) {
-                                sl = zsl - sysl;
-                                //alert("最后一位，总水量-前面的水量=" + sl);
-                            } else {
-                                if (this.QZFS == "0") { //向下取整
-                                    sl = Math.floor(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + retUser.data[i].ZXBJSZ + "向下取整后：" + sl);
-                                } else if (this.QZFS == "1") { //四舍五入
-                                    sl = Math.round(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + retUser.data[i].ZXBJSZ + "四舍五入后：" + sl);
-                                } else if (this.QZFS == "2") { //向上取整
-                                    sl = Math.ceil(zsl * parseInt(retUser.data[i].ZXBJSZ) / 100);
-                                    //alert("总水量：" + zsl + "比例：" + retUser.data[i].ZXBJSZ + "向上取整后：" + sl);
-                                }
-                                sysl = sysl + sl;
-                            }
-                            if (this.UserDetails.YHBH == retUser.data[i].YHBH) {
-                                this.YL = sl;
-                            } else {
-                                var zd = parseInt(retUser.data[i].QD) + sl;
-                                var sllrfs = this.SLLRFS;
-                                var sbyxzt = this.SBYXZT == "" ? "正常" : this.SBYXZT;
-                                var sql = 'UPDATE MRM_USER_BEAN SET SLLRFS="' + sllrfs +
-                                    '",ZD="' + zd +
-                                    '",YL="' + sl +
-                                    '",SJSL="' + sl +
-                                    '",SBYXZT="' + sbyxzt +
-                                    '",CBRQ="' + dataTime() +
-                                    '",CBBZ="1",YLZT="正常" WHERE YHBH="' + retUser.data[i].YHBH + '" and userName="' + this.LoginName + '"';
-                                var ret = db.executeSqlSync({
-                                    name: 'CBtest',
-                                    sql: sql
-                                });
-                            }
-                        }
-                    }
-                }
+            saveData: function(lon, lat) { //保存用户数据到本地
                 var yl = Number(this.YL);
                 var qd = this.UserDetails.QD;
                 var zd = Number(this.ZD);
@@ -2399,26 +2382,35 @@ function fnIntVue() {
                 var clfs = this.CLFS;
                 var ylzt = this.resultType;
                 var sllrfs = this.SLLRFS;
-                var sjsl = this.SJSL;
-                var sql = 'UPDATE MRM_USER_BEAN SET SLLRFS="' + sllrfs + '", YLZT="' + ylzt + '", CLFS="' + clfs + '", ZD="' + zd + '",SFGC="' + sfgc + '",YL="' + yl + '",SJSL="' + sjsl + '",CBRQ="' + dataTime() + '",CBBZ="1",BYXZT="' + byxzt + '",CBYSZJD="' + lon + '",CBYSZWD="' + lat + '",SBYXZT="' +
+                var sql = 'UPDATE MRM_USER_BEAN SET SLLRFS="' + sllrfs + '", YLZT="' + ylzt + '", CLFS="' + clfs + '", ZD="' + zd + '",SFGC="' + sfgc + '",YL="' + yl + '",CBRQ="' + dataTime() + '",CBBZ="1",BYXZT="' + byxzt + '",CBYSZJD="' + lon + '",CBYSZWD="' + lat + '",SBYXZT="' +
                     sbyxzt + '",SJBM="' + sjbm + '",XBBH = "' + xbbh + '",ZHHBRQ = "' + hbrq + '",XBQD = "' + xbqd + '",XBZD = "' + xbzd + '",SLZT = "' + slzt + '",PATH = "' + path + '" WHERE YHBH="' + this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"';
                 var ret = db.executeSqlSync({
                     name: 'CBtest',
                     sql: sql
                 });
                 _this = this;
+
+                // 是否进行查询操作
+                if(_this.isSummaryTable.status && _this.isSummaryTable.data.length > 0){
+                    // 获取当前表状态  判断表是否是总表
+                    _this.selectSummary();
+                }
+
                 if (ret.status = true) {
                     // 保存成功修改抄表本已抄和未抄
                     var retUser = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and ZXBLX!="2" AND CBBZ="1" and userName="' + this.LoginName + '"'
+                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' AND CBBZ="1" and userName="' + this.LoginName + '"'
                     });
-                    var retUsers = db.selectSqlSync({
+                    // var retUsers = db.selectSqlSync({
+                    //     name: 'CBtest',
+                    //     sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and userName="' + this.LoginName + '"'
+                    // });
+                    var userLength = db.selectSqlSync({
                         name: 'CBtest',
-                        sql: 'SELECT * FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and ZXBLX!="2" and userName="' + this.LoginName + '"'
-                    });
-
-                    var wcusers = retUsers.data.length - retUser.data.length
+                        sql: 'SELECT count(*) as len FROM MRM_USER_BEAN WHERE CBCH=\'' + this.cbch + '\' and userName="' + this.LoginName + '"'
+                    })
+                    var wcusers = userLength.data[0].len - retUser.data.length
                     var retBooks = db.executeSqlSync({
                         name: 'CBtest',
                         sql: 'UPDATE MRM_BOOKS_BEAN SET YC=\'' + retUser.data.length + '\' , WC=\'' + wcusers + '\' WHERE CBCH=\'' + this.cbch + '\' and userName="' + this.LoginName + '"'
@@ -2448,17 +2440,15 @@ function fnIntVue() {
                     this.UserDetails.PATH = this.PATH;
                     this.insertPhotoIntoDB();
                     // vant.Toast("保存成功");
-
+                    //   表数据保存之后更新表状态   重新获取表状态
                     var ret = db.selectSqlSync({
                         name: 'CBtest',
                         sql: 'SELECT * FROM MRM_METERSTATE_BEAN WHERE BH="' + _this.BYXZT + '" and userName="' + _this.LoginName + '"'
                     });
                     if (ret.status) {
                         if (ret.data.length > 0) {
-                            if (ret.data[0].GZYY != null && ret.data[0].GZYY != "null" && ret.data[0].GZYY != "") {
+                            if (ret.data[0].GZYY && ret.data[0].GZYY != "null") {
                                 var gzyy = ret.data[0].GZYY;
-                                this.Records = [];
-                                this.FileUrlArr = [];
                                 this.uploadWorkOrder(gzyy);
                             } else {
                                 this.save();
@@ -2471,7 +2461,7 @@ function fnIntVue() {
                     }
                 }
             },
-            save() {
+            save: function() {
                 if (api.connectionType != 'none') {
                     _this.uploaderMeterLocationImg();
                     if (this.sendUpload != "true" && this.sendUploadPicture != "true") {
@@ -2479,28 +2469,7 @@ function fnIntVue() {
                         api.hideProgress();
                         _this.LoadOrNot = 0;
                         //保存完成判断是否是从主表跳转过来的，如果是就跳回去
-                        if (_this.ZBBH == "") {
-                            if (this.sendNext == "true") {
-                                setTimeout(function() {
-                                    _this.nextHousehold();
-                                    _this.preventRepeatTouch = false;
-                                }, 300);
-                            } else {
-                                _this.preventRepeatTouch = false;
-                            }
-                        } else {
-                            //搜索
-                            var UserNumber = this.UserList.findIndex(function(item) {
-                                return item.YHBH == _this.ZBBH;
-                            });
-                            if (UserNumber == -1) {
-                                this.UserNumber = 0;
-                            } else {
-                                this.UserNumber = UserNumber;
-                            }
-                            _this.ZBBH = "";
-                            _this.preventRepeatTouch = false;
-                        }
+                        jumpToBack();
                     } else {
                         if (this.sendUpload == "true" && this.sendUploadPicture == "true") {
                             //保存后自动上传数据和图片
@@ -2519,32 +2488,37 @@ function fnIntVue() {
                 } else {
                     vant.Toast("保存本地成功");
                     api.hideProgress();
-                    _this.LoadOrNot = 0
-                    if (this.ZBBH == "") {
-                        if (this.sendNext == "true") {
-                            setTimeout(function() {
-                                _this.nextHousehold();
-                                _this.preventRepeatTouch = false;
-                            }, 300);
-                        } else {
-                            _this.preventRepeatTouch = false;
-                        }
-                    } else {
-                        //搜索
-                        var UserNumber = this.UserList.findIndex(function(item) {
-                            return item.YHBH == _this.ZBBH;
-                        });
-                        if (UserNumber == -1) {
-                            this.UserNumber = 0;
-                        } else {
-                            this.UserNumber = UserNumber;
-                        }
-                        _this.ZBBH = "";
-                        _this.preventRepeatTouch = false;
-                    }
+                    _this.LoadOrNot = 0;
+                    //保存完成判断是否是从主表跳转过来的，如果是就跳回去
+                    jumpToBack();
+                }
+                // 保存完成判断是否是从主表跳转过来的，如果是就跳回去
+                function jumpToBack() {
+                  if (_this.ZBBH == "") {
+                      if (_this.sendNext == "true") {
+                          setTimeout(function() {
+                              _this.nextHousehold();
+                              _this.preventRepeatTouch = false;
+                          }, 300);
+                      } else {
+                          _this.preventRepeatTouch = false;
+                      }
+                  } else {
+                      //搜索
+                      var UserNumber = _this.UserList.findIndexNew(function(item) {
+                          return item.YHBH == _this.ZBBH;
+                      });
+                      if (UserNumber == -1) {
+                          _this.UserNumber = 0;
+                      } else {
+                          _this.UserNumber = UserNumber;
+                      }
+                      _this.ZBBH = "";
+                      _this.preventRepeatTouch = false;
+                  }
                 }
             },
-            uploader(status) { //上传数据
+            uploader: function(status) { //上传数据
                 _this = this;
                 var statusOne = status;
                 var ret1 = db.selectSqlSync({
@@ -2568,7 +2542,7 @@ function fnIntVue() {
                                 "CBBZ": cUserDetails.CBBZ,
                                 "QD": cUserDetails.QD,
                                 "ZD": cUserDetails.XBZD,
-                                "YL": cUserDetails.SJSL,
+                                "YL": cUserDetails.YL,
                                 "CBRQ": cUserDetails.CBRQ,
                                 "BYXZT": cUserDetails.BYXZT,
                                 "JD": cUserDetails.CBYSZJD,
@@ -2591,7 +2565,7 @@ function fnIntVue() {
                                 "CBBZ": cUserDetails.CBBZ,
                                 "QD": cUserDetails.QD,
                                 "ZD": cUserDetails.ZD,
-                                "YL": cUserDetails.SJSL,
+                                "YL": cUserDetails.YL,
                                 "CBRQ": cUserDetails.CBRQ,
                                 "BYXZT": cUserDetails.BYXZT,
                                 "JD": cUserDetails.CBYSZJD,
@@ -2614,7 +2588,7 @@ function fnIntVue() {
                                 "CBBZ": cUserDetails.CBBZ,
                                 "QD": cUserDetails.QD,
                                 "ZD": cUserDetails.XBZD,
-                                "YL": cUserDetails.SJSL,
+                                "YL": cUserDetails.YL,
                                 "CBRQ": cUserDetails.CBRQ,
                                 "BYXZT": cUserDetails.BYXZT,
                                 "JD": cUserDetails.CBYSZJD,
@@ -2631,7 +2605,7 @@ function fnIntVue() {
                                 "CBBZ": cUserDetails.CBBZ,
                                 "QD": cUserDetails.QD,
                                 "ZD": cUserDetails.ZD,
-                                "YL": cUserDetails.SJSL,
+                                "YL": cUserDetails.YL,
                                 "CBRQ": cUserDetails.CBRQ,
                                 "BYXZT": cUserDetails.BYXZT,
                                 "JD": cUserDetails.CBYSZJD,
@@ -2661,6 +2635,9 @@ function fnIntVue() {
                         })
                     }
                     fnPostNoProcess('', body, 'application/json', false, function(ret, err) {
+                        if(err) {
+
+                        }
                         if (statusOne != 0) {
                             // 开启一个，开启了数据上传就隐藏
                             api.hideProgress();
@@ -2676,7 +2653,7 @@ function fnIntVue() {
                             if (ret.Status == 0 && ((resData.length > 0 && resData.IS_SCCG == "1") || resData.length == 0)) {
                                 var ret = db.executeSqlSync({
                                     name: 'CBtest',
-                                    sql: 'update MRM_USER_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0, SFSC=1 where YHBH="' + cUserDetails.YHBH + '" and userName="' + this.LoginName + '"'
+                                    sql: 'update MRM_USER_BEAN set CWXX=" ", ZTSCCG=1, XGXXSC=1, SFXG=0 where YHBH="' + cUserDetails.YHBH + '" and userName="' + this.LoginName + '"'
                                 });
                                 if (statusOne == 0) {
                                     _this.uploaderImg(false, true)
@@ -2697,7 +2674,7 @@ function fnIntVue() {
                                         }
                                     } else {
                                         //搜索
-                                        var UserNumber = this.UserList.findIndex(function(item) {
+                                        var UserNumber = this.UserList.findIndexNew(function(item) {
                                             return item.YHBH == _this.ZBBH;
                                         });
                                         if (UserNumber == -1) {
@@ -2730,8 +2707,9 @@ function fnIntVue() {
                                 _this.preventRepeatTouch = false;
                             }
                         } else {
-                            api.hideProgress();
-                            _this.LoadOrNot = 0
+
+                          api.hideProgress();
+                          _this.LoadOrNot = 0
                             api.toast({
                                 msg: '网络连接超时,数据已保存本地',
                                 duration: 2000,
@@ -2740,9 +2718,18 @@ function fnIntVue() {
                             _this.preventRepeatTouch = false;
                         }
                     });
+                } else {
+                  // api.hideProgress();
+                  // _this.LoadOrNot = 0
+                  // api.toast({
+                  //     msg: '网络连接超时,数据已保存本地',
+                  //     duration: 2000,
+                  //     location: 'top'
+                  // });
+                  // _this.preventRepeatTouch = false;
                 }
             },
-            uploaderImg(showProgress, turnToNext) { //上传抄表图片
+            uploaderImg: function(showProgress, turnToNext) { //上传抄表图片
                 _this = this;
                 if (showProgress) {
                     _this.LoadOrNot = 1
@@ -2774,7 +2761,7 @@ function fnIntVue() {
                             }
                         } else {
                             //搜索
-                            var UserNumber = this.UserList.findIndex(function(item) {
+                            var UserNumber = this.UserList.findIndexNew(function(item) {
                                 return item.YHBH == _this.ZBBH;
                             });
                             if (UserNumber == -1) {
@@ -2788,7 +2775,7 @@ function fnIntVue() {
                     }
                 }
             },
-            uploaderMeterLocationImg() { //上传表位图片
+            uploaderMeterLocationImg: function() { //上传表位图片
                 _this = this;
                 var retimage = db.selectSqlSync({
                     name: 'CBtest',
@@ -2802,7 +2789,7 @@ function fnIntVue() {
                     }
                 }
             },
-            imguploader(loaderdata, loader, n, falseNum, turnToNext, isMeterLocation) { //调用上传图片接口
+            imguploader: function(loaderdata, loader, n, falseNum, turnToNext, isMeterLocation) { //调用上传图片接口
                 var PhotoType;
                 if (loaderdata[n].NotLoction == '0') {
                     PhotoType = '1'; //抄表图片
@@ -2854,11 +2841,18 @@ function fnIntVue() {
                                 name: 'CBtest',
                                 sql: 'update MRM_PHOTOS_BEAN set SFSC=1 where _id="' + photoList._id + '" and userName="' + _this.LoginName + '"'
                             });
-                            _this.ImgData.forEach(function(item) {
+                            for(var c = 0; c < _this.ImgData.length; c++) {
+                                var item = _this.ImgData[c];
                                 if (item.path == photoList.ZPLJ) {
                                     item.isAppend = false;
+                                    _this.ImgData[c].isAppend = false;
                                 }
-                            });
+                            }
+                            // _this.ImgData.forEach(function(item) {
+                            //     if (item.path == photoList.ZPLJ) {
+                            //         item.isAppend = false;
+                            //     }
+                            // });
                             falseNum--;
                         }
                     }
@@ -2886,7 +2880,7 @@ function fnIntVue() {
                                     }
                                 } else {
                                     //搜索
-                                    var UserNumber = this.UserList.findIndex(function(item) {
+                                    var UserNumber = this.UserList.findIndexNew(function(item) {
                                         return item.YHBH == _this.ZBBH;
                                     });
                                     if (UserNumber == -1) {
@@ -2898,34 +2892,62 @@ function fnIntVue() {
                                     _this.preventRepeatTouch = false;
                                 }
                             } else {
-                                vant.Dialog.alert({
-                                        title: '提示',
-                                        message: '存在上传失败的图片，请到数据上传页面重新上传',
-                                    })
-                                    .then(function() {
-                                        if (_this.ZBBH == "") {
-                                            if (_this.sendNext == "true" && turnToNext) {
-                                                setTimeout(function() {
-                                                    _this.nextHousehold();
-                                                    _this.preventRepeatTouch = false;
-                                                }, 300);
-                                            } else {
+                                // vant.Dialog.alert({
+                                //         title: '提示',
+                                //         message: '存在上传失败的图片，请到数据上传页面重新上传',
+                                //     })
+                                //     .then(function() {
+                                //         if (_this.ZBBH == "") {
+                                //             if (_this.sendNext == "true" && turnToNext) {
+                                //                 setTimeout(function() {
+                                //                     _this.nextHousehold();
+                                //                     _this.preventRepeatTouch = false;
+                                //                 }, 300);
+                                //             } else {
+                                //                 _this.preventRepeatTouch = false;
+                                //             }
+                                //         } else {
+                                //             //搜索
+                                //             var UserNumber = this.UserList.findIndexNew(function(item) {
+                                //                 return item.YHBH == _this.ZBBH;
+                                //             });
+                                //             if (UserNumber == -1) {
+                                //                 this.UserNumber = 0;
+                                //             } else {
+                                //                 this.UserNumber = UserNumber;
+                                //             }
+                                //             _this.ZBBH = "";
+                                //             _this.preventRepeatTouch = false;
+                                //         }
+                                //     })
+
+                                  api.alert({
+                                      title: '提示',
+                                      msg: '存在上传失败的图片，请到数据上传页面重新上传',
+                                  }, function(ret, err) {
+                                    if (_this.ZBBH == "") {
+                                        if (_this.sendNext == "true" && turnToNext) {
+                                            setTimeout(function() {
+                                                _this.nextHousehold();
                                                 _this.preventRepeatTouch = false;
-                                            }
+                                            }, 300);
                                         } else {
-                                            //搜索
-                                            var UserNumber = this.UserList.findIndex(function(item) {
-                                                return item.YHBH == _this.ZBBH;
-                                            });
-                                            if (UserNumber == -1) {
-                                                this.UserNumber = 0;
-                                            } else {
-                                                this.UserNumber = UserNumber;
-                                            }
-                                            _this.ZBBH = "";
                                             _this.preventRepeatTouch = false;
                                         }
-                                    })
+                                    } else {
+                                        //搜索
+                                        var UserNumber = this.UserList.findIndexNew(function(item) {
+                                            return item.YHBH == _this.ZBBH;
+                                        });
+                                        if (UserNumber == -1) {
+                                            this.UserNumber = 0;
+                                        } else {
+                                            this.UserNumber = UserNumber;
+                                        }
+                                        _this.ZBBH = "";
+                                        _this.preventRepeatTouch = false;
+                                    }
+                                 });
                             }
                         }
                     }
@@ -3018,7 +3040,7 @@ function fnIntVue() {
                 //     }
                 // });
             },
-            uploadWorkOrder(gzyy) { //上传异常记录
+            uploadWorkOrder: function(gzyy) { //上传异常记录
                 _this = this;
                 if (_this.PhotoIndex < _this.ImgData.length) {
                     if (_this.ImgData[_this.PhotoIndex].data.NotLoction == 1) {
@@ -3076,33 +3098,26 @@ function fnIntVue() {
                                 name: 'CBtest',
                                 sql: 'delete from MRM_WORKORDER_BEAN WHERE YHBH="' + _this.UserDetails.YHBH + '" and userName="' + this.LoginName + '"'
                             });
-                            var sql = "INSERT INTO MRM_WORKORDER_BEAN (userName, YHBH, YHMC, YHDZ, SBKJ, YYMS, BZ, SFSC) VALUES " +
+                            var sql = "INSERT INTO MRM_WORKORDER_BEAN (userName, YHBH, YHMC, YHDZ, YYMS, BZ, SFSC) VALUES " +
                                 "('" + _this.LoginName +
                                 "', '" + _this.UserDetails.YHBH +
                                 "', '" + _this.UserDetails.YHMC +
                                 "', '" + _this.UserDetails.YHDZ +
-                                "', '" + _this.UserDetails.KJ +
                                 "', '', '" + gzyy +
                                 "', '0')";
-                            //console.log(sql);
                             var workOrderData = db.executeSqlSync({
                                 name: 'CBtest',
                                 sql: sql
                             });
                             if (workOrderData.status) {
                                 //保存异常记录成功
-                                var yhbh = _this.UserDetails.YHBH == null ? "" : _this.UserDetails.YHBH;
-                                var yhmc = _this.UserDetails.YHMC == null ? "" : _this.UserDetails.YHMC;
-                                var yhdz = _this.UserDetails.YHDZ == null ? "" : _this.UserDetails.YHDZ;
-                                var sbkj = _this.UserDetails.KJ == null ? "" : _this.UserDetails.KJ;
-                                var yddh = _this.UserDetails.YDDH == null ? "" : _this.UserDetails.YDDH;
-                                var sbrdh = $api.getStorage('cbOperatorMoblie') == null ? "" : $api.getStorage('cbOperatorMoblie');
-                                var Required = 'YHBH=' + yhbh +
-                                    '&YHMC=' + yhmc +
-                                    '&YHDZ=' + yhdz +
-                                    '&SBKJ=' + sbkj +
-                                    '&LXRDH=' + yddh +
-                                    '&SBRDH=' + sbrdh +
+                                var SBRDH = $api.getStorage('cbOperatorMoblie') == null ? "" : $api.getStorage('cbOperatorMoblie');
+                                var Required = 'YHBH=' + _this.UserDetails.YHBH +
+                                    '&YHMC=' + _this.UserDetails.YHMC +
+                                    '&YHDZ=' + _this.UserDetails.YHDZ +
+                                    '&SBKJ=' + _this.UserDetails.KJ +
+                                    '&LXRDH=' + _this.UserDetails.YDDH +
+                                    '&SBRDH=' + SBRDH +
                                     '&GZYY=' + gzyy +
                                     '&BZ=';
 
@@ -3160,7 +3175,7 @@ function fnIntVue() {
                     }
                 }
             },
-            appendImg() { //已抄追加图片
+            appendImg: function() { //已抄追加图片
                 this.insertPhotoIntoDB();
                 if (this.sendUploadPicture == "true" && api.connectionType != "none") {
                     this.uploaderImg(true, false);
@@ -3176,7 +3191,7 @@ function fnIntVue() {
                     this.preventRepeatTouch = false;
                 }
             },
-            updateQD() {
+            updateQD: function() {
                 if (api.connectionType == "wifi" || api.connectionType == "4g" || api.connectionType == "5g") {
                     var db = api.require('db');
                     var _this = this;
@@ -3185,7 +3200,7 @@ function fnIntVue() {
                         ClientName: api.deviceModel,
                         OperatorId: $api.getStorage('cbOperatorId'),
                         OperatorName: $api.getStorage('cbOperatorName'),
-                        Required: `yhbh=${_this.UserDetails.YHBH}`,
+                        Required: 'yhbh=' + _this.UserDetails.YHBH,
                         Type: "133"
                     };
                     var body = {
@@ -3217,7 +3232,7 @@ function fnIntVue() {
                     });
                 }
             },
-            Time(type) {
+            Time: function(type) {
                 var date = new Date()
                 var time = null
                 switch (type) {
@@ -3247,7 +3262,7 @@ function fnIntVue() {
                 }
                 return time
             },
-            datetime() {
+            datetime: function() {
                 var year = Time("year"); //获取系统的年；
                 var month = Time("month"); //获取系统月份，由于月份是从0开始计算，所以要加1
                 var day = Time("day"); //获取系统日
@@ -3257,28 +3272,36 @@ function fnIntVue() {
                 var dayTime = year + month + day + hour + minute + second
                 return dayTime;
             },
-            getDaysBetween(dateString1, dateString2) {
+            getDaysBetween: function(dateString1, dateString2) {
                 //计算两个日期的间隔天数
                 var startDate = Date.parse(dateString1);
                 var endDate = Date.parse(dateString2);
                 var days = (endDate - startDate) / (1 * 24 * 60 * 60 * 1000);
                 return days;
             },
-            tab(date1, date2) {
+            tab: function(date1, date2) {
                 //判断两个时间的大小
                 var oDate1 = new Date(date1);
                 var oDate2 = new Date(date2);
                 if (oDate1.getTime() > oDate2.getTime()) {
                     return true;
-                    console.log('第一个大');
                 } else {
                     return false;
-                    console.log('第二个大');
                 }
+            },
+            selectSummary:function(){
+              // 获取当前表状态  判断表是否是总表
+              this.isSummaryTable = db.selectSqlSync({
+                  name: 'CBtest',
+                  sql: 'select * from MRM_USER_BEAN where ZBBH in (select YHBH from MRM_USER_BEAN where YHBH="' + this.UserDetails.YHBH + '" and SBYT="总表") and userName="' + this.LoginName + '" and CBBZ="0"'
+              });
             }
 
         },
         mounted: function() {
+            // 获取当前表状态  判断表是否是总表
+            this.selectSummary();
+
             this.initData();
         }
     })
