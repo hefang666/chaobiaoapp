@@ -128,6 +128,7 @@ function pGetPicture(options, callback) {
                 // 开始压缩
                 // 获取要压缩的尺寸
                 var picSize = parseInt($api.getStorage("cameraScale"));
+                picSize = picSize ? picSize:500;
                 // alert(picSize);
                 var imageFilter = api.require('imageFilter');
                 var pathArr = oldPath.split("/");
@@ -393,9 +394,70 @@ function mobilePrintInply(waterMarkJson, path, callback) {
     var mobilePrint = api.require('mobilePrint');
     waterMarkJson.oldimgurl = path;
     waterMarkJson.newimgurl = path;
-    // alert("添加水印开始");
+    // alert("添加水印开始");console.log(JSON.stringify(waterMarkJson));
+    // var pictureWatermark = api.require('pictureWatermark');
+    //
+    // var newDirArr = waterMarkJson.newimgurl.split("/");
+    // newDirArr.pop();
+    // var newDirStr = newDirArr.join("/");
+    // console.log(newDirStr);
+    // var param = {
+    //     imagePath: waterMarkJson.oldimgurl,
+    //     // markPath: waterMarkJson.newimgurl,
+    //     savePath: newDirStr,
+    //     // margin: {
+    //     //     x: 180,
+    //     //     y: 180
+    //     // },
+    //     margin: {
+    //         x: 10,
+    //         y: 100
+    //     },
+    //     position:{
+    //         type: 1,
+    //         x: 100,
+    //         y: 200
+    //     },
+    //     markType: 0,
+    //     textAttr: {
+    //         text: waterMarkJson.font0words,
+    //         size: waterMarkJson.font0size,
+    //         color: waterMarkJson.font0color,
+    //         alpha: 255,
+    //         rotation: 0,
+    //         font: "",
+    //         backgroundColor: "#00ff00",
+    //         backgroundColorAlpha: 0,
+    //     },
+    // };
+    // var uzmodulemarkdemo = api.require('waterImageMark');
+    // uzmodulemarkdemo.addMark(param, function(ret, err){
+    //         // alert("添加水印结束");
+    //         if (ret) {
+    //             var fs = api.require('fs');
+    //             fs.rename({
+    //               oldPath: ret.data,
+    //               newPath: waterMarkJson.newimgurl
+    //             }, function(ret, err) {
+    //               if (ret.status) {
+    //                   console.log(JSON.stringify(ret));
+    //                   callback(waterMarkJson.newimgurl);
+    //               } else {
+    //                   callback(ret.data);
+    //               }
+    //             });
+    //
+    //         }else {
+    //             callback(path)
+    //         }
+    //         console.log(JSON.stringify(ret));
+    // });
+
+
+
     mobilePrint.imgPrint(waterMarkJson, function(ret) {
         // alert("添加水印结束");
+        // console.log(JSON.stringify(ret));
         if (ret.status) {
             callback(ret.imgurl)
         } else {
